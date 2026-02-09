@@ -13,7 +13,8 @@ Descripción
 *   [Uso](#Uso)
 
 ## Requerimientos: 
-*   Python 3.14.0+ 
+*   Python 3.14.0+
+*   pandas 2.3.3+
 *   matplotlib 3.10.7+ 
 *   numpy 2.3.4+ 
 *   pillow 12.0.0+ 
