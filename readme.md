@@ -14,9 +14,9 @@ Descripción
 
 ## Requerimientos: 
 *   Python 3.14.0+
-*   pandas 2.3.3+
 *   matplotlib 3.10.7+ 
 *   numpy 2.3.4+ 
+*   pandas 2.3.3+
 *   pillow 12.0.0+ 
 *   PyMuPDF 1.26.7+ 
 *   scikit-learn 1.7.2+
