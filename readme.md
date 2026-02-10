@@ -6,7 +6,7 @@ Proyecto 1er. año Ciencia de Datos e Inteligencia Artificial
 
 Descripción
 
-## Contents
+## Contenido
 
 *   [Requerimientos](#Requerimientos)
 *   [Instalación](#Instalación)
