@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Se separó la clase VisorPdf en un archivo separado visorpdf.py y se importa en main.py.
+- Se pasó la clase VisorPdf en un archivo separado visorpdf.py y se importa en main.py.
 
 ## [1.3.0] - 2026-01-09
 
@@ -21,4 +21,5 @@
 ## [1.0.0] - 2025-12-29
 
 _First release._
+
 
