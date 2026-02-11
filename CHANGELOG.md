@@ -1,6 +1,6 @@
 # Changelog
 
-## [13.0.1] - 2026-02-11
+## [1.3.1] - 2026-02-11
 
 ### Changed
 
@@ -9,6 +9,7 @@
 ## [1.3.0] - 2026-01-09
 
 ### Added
+
 - Solapas para aplicación, manual e informe.
 - Clase VisorPdf y se abrió manual.pdf e informe en solapas correspondientes.
 - Etiqueta con versión en footer.
