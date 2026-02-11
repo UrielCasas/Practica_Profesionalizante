@@ -4,7 +4,12 @@ Proyecto 1er. año Ciencia de Datos e Inteligencia Artificial
 
 ## Intro
 
-Descripción
+Cada carpeta contiene un script python que permite leer archivos csv de un directorio determinado
+y con un formato predeterminado con información del uso de la tarjeta SUBE.
+
+La carpeta visor contiene una pequeña clase para visualizar archivos pdf basada en pillow/PyMuPDF
+y un script de ejemplo que la utiliza.
+
 
 ## Contenido
 
