@@ -14,8 +14,11 @@
 - Clase VisorPdf y se abrió manual.pdf e informe en solapas correspondientes.
 - Etiqueta con versión en footer.
 
+## [1.2.0] - 2025-12-29
+
 ## [1.1.0] - 2025-12-29
 
 ## [1.0.0] - 2025-12-29
 
 _First release._
+
