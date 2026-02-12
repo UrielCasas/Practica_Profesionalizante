@@ -34,11 +34,12 @@ Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
 
 ## [1.1.0] - 2025-12-29
 
-- Aplicación en /solo_colectivo/main.py
+- Aplicación: /solo_colectivo/main.py
 
 ## [1.0.0] - 2025-12-29
 
 _First release._
+
 
 
 
