@@ -16,6 +16,11 @@ Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
   - Ventana de configuración para actualizar config.json.
   - Entrada en menu hacer.
 
+ ### Removed
+
+ - Función custom_message.
+ - Función estadisticas_texto.
+
 ## [1.3.1] - 2026-02-11
 
 ### Changed
@@ -39,6 +44,7 @@ Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
 ## [1.0.0] - 2025-12-29
 
 _First release._
+
 
 
 
