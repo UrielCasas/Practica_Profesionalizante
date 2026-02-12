@@ -45,5 +45,9 @@ Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
 
 _First release._
 
-[1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/_vers/1.3.0
-[1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/_vers/1.3.1
+[1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/_vers/solo_colectivo/1.3.1
+[1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/_vers/solo_colectivo/1.3.0
+[1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/_vers/solo_colectivo/1.2.0
+
+
+
