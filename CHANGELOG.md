@@ -1,7 +1,6 @@
 # Changelog de [/solo_colectivo/main.py]
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
-Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
 
 ## [Unreleased]
 - verificación de datos ingresados en ventana de configuración y control de errores.
@@ -48,6 +47,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/1.2.0
+
 
 
 
