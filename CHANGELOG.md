@@ -1,4 +1,4 @@
-# Changelog
+# Changelog de [/solo_colectivo/main.py]
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
 Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
@@ -39,6 +39,7 @@ Este proyecto sigue el [Versionamiento Semántico](https://semver.org/).
 ## [1.0.0] - 2025-12-29
 
 _First release._
+
 
 
 
