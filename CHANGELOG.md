@@ -2,9 +2,24 @@
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
 
-## [Unreleased]
-- verificación de datos ingresados en ventana de configuración y control de errores.
-- corregir mensajes varios.
+## [1.4.2] - 2026-02-26
+
+### Added
+- Control de datos ingresados en configuracion(), sólo se inicializa/entrena model si hubo cambio
+  en valores y hay un DataFrame cargado.
+- Se actualiza de manera dinámica componente text_output si se cambia chk_preview_var en configuracion().
+
+### Changed
+
+- Se cambio del uso de variables max_iter_ini,test_size_ini,random_state_ini y mostrar_preview_ini por
+  diccionario config.
+
+### Fixed
+
+- Error "failed to open file..." al inicio del programa.
+- Error "procesando datos...", si se intenta guardar configuración sin tener cargado un DataFrame
+- En verificar() se cambió messagebox.showerror por messagebox.showinfo
+
 
 ## [1.4.0] - 2026-02-11
 
@@ -48,6 +63,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
