@@ -2,6 +2,9 @@
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
 
+## [Unreleased]
+- Controlar rango de valores en ventana de configuración, ver rango aceptable de valores.
+
 ## [1.4.2] - 2026-02-13
 
 ### Added
@@ -65,6 +68,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
