@@ -6,6 +6,15 @@ Todas las novedades notables de este proyecto se documentarán en este archivo.
 - Controlar rango de valores en ventana de configuración, ver rango aceptable de valores.
 - Valores por default de configuración y path archivo config.json que sean constantes simbólicas.
 
+## [1.4.4] - 2026-02-22
+
+### Added
+- función leer_archivo_config, chequeo y lectura del archivo config.json.
+
+### Changed
+- Los valores del config.json creado en caso de error se definen al inicio de código en un diccionario default_config.
+
+
 ## [1.4.3] - 2026-02-20
 
 ### Added
@@ -74,11 +83,13 @@ Todas las novedades notables de este proyecto se documentarán en este archivo.
 
 _First release._
 
+[1.4.3]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.2
 [1.4.2]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.2
 [1.4.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.0
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
