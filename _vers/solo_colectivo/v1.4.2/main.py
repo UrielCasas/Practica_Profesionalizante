@@ -68,7 +68,7 @@ config_path         = f"{app_dir}/config.json"
 
 config              = None    # recibe los datos leides desde arch_conf
 # Datos de información del software
-VERSION        = "1.4.0"
+VERSION        = "1.4.2"
 AUTORES        = "Casas Uriel - Fustet Arnaldo"
 ANIO           = "2025/2026"
 LINK_MANUAL    = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
@@ -1320,4 +1320,5 @@ actualizar_hora()
 # es el loop principal de la interfaz gráfica
 # la ventana se vuelve interactiva y se queda “escuchando” eventos
 root.mainloop()
+
 
