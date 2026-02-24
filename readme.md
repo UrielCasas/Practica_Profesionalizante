@@ -26,10 +26,11 @@ y un script de ejemplo que la utiliza.
 *   pillow 12.0.0+ 
 *   PyMuPDF 1.26.7+ 
 *   scikit-learn 1.7.2+
+*   tkcalendar 1.6.1+
 
 ## Instalación: 
 *   Instalar python 
-*   desde linea de comandos ejecutar: pip install pandas numpy scikit-learn matplotlib pymupdf pillow
+*   desde linea de comandos ejecutar: pip install pandas numpy scikit-learn matplotlib pymupdf pillow tkcalendar
 *   descargar proyecto, descomprimir csv.7z
 *   ejecutar python main.py o desde vscode
 
