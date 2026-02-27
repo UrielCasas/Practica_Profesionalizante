@@ -91,7 +91,11 @@ class VisorPdf(ttk.Frame):
         self.scrollbar.pack(side="right", fill="y")
         self.canvas.pack(fill="both", expand=True)
 
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        # genera conflicto si se crean varias instancias de visorpdf
+        # la última instancia se queda con el foco de todos los mousewheel
+        #self.canvas.bind_all("<MouseWheel>", self._on_mousewheel) 
+
+        self.canvas.bind("<MouseWheel>", self._on_mousewheel)
 
         self.pagina_actual = 0
 
