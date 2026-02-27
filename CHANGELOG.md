@@ -2,9 +2,28 @@
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
 
-## [Unreleased]
-- Controlar rango de valores en ventana de configuración, ver rango aceptable de valores.
-- Valores por default de configuración y path archivo config.json que sean constantes simbólicas.
+## [1.4.5] - 2026-02-27
+
+ ### Removed
+
+ - Función importar_csv (ahora solo se utiliza importar_datos()).
+
+### Added
+
+- Se agregó control de valores ingresados en configuración.
+- Se agregó manual de usuario.
+- Se agregó informe con resultados y conclusiones.
+
+### Changed
+
+- En gráfico barras días se cambiaron los colores de las barras.
+- Se modificó el título de la ventana root.
+
+### Fixed
+
+- Se corrigió evento <MouseScroll> en clase VisorPdf, bind_all generaba conflicto se se creaban
+  varias instancias de la clase, se reemplazo por bind.
+- En procesar_df() se podaron filas con valor 0 en campo correspondiente a cantidad.
 
 ## [1.4.4] - 2026-02-22
 
@@ -90,6 +109,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
