@@ -69,38 +69,13 @@ config              = None    # recibe los datos leides desde arch_conf
 # valores por default de claves en archivo config.json
 config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
 # Datos de información del software
-VERSION             = "1.4.4"
+VERSION             = "1.4.5"
 AUTORES             = "Casas Uriel - Fustet Arnaldo"
 ANIO                = "2025/2026"
 LINK_MANUAL         = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
 LINK_DESCARGAS      = "https://github.com/UrielCasas/Practica_Profesionalizante"
 
 # ---------------- FUNCIONES ----------------
-def importar_csv():
-    """
-    Docstring for importar_csv
-    Importa un archivo CSV con encabezados.
-    """
-    global df, X, y
-   
-    archivo = filedialog.askopenfilename(
-        title="Seleccionar archivo CSV",
-        filetypes=[("Archivos CSV", "*.csv"), ("Todos los archivos", "*.*")]
-    )
-
-    if (not archivo):
-        escribir("Importación CSV cancelada.")
-        return
-
-    escribir("Importando CSV: " + archivo)
-
-    try:
-        #df = pd.read_csv(archivo, header=0)
-        df  = pd.read_csv(archivo, sep=';', header=0)
-    except Exception as e:
-        messagebox.showerror("Error al importar CSV", str(e))
-        return
-
 def leer_dir(dir):
     """
     Docstring for leer_dir
@@ -158,7 +133,7 @@ def procesar_df():
         def es_feriado(fecha):
             # import pandas as pd
             # arreglo frds guada los días feriados de los 2020 al 2025
-            feriados =  [    '2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
+            feriados =  ['2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
                         ,'2020-05-01','2020-05-25','2020-06-15','2020-06-20','2020-07-09','2020-07-10'
                         ,'2020-08-17','2020-10-12','2020-11-23','2020-12-07','2020-12-08','2020-12-25'
 
@@ -304,7 +279,7 @@ def preparar_modelo():
         data_encoded = pd.get_dummies(df, columns=["Estacion"], drop_first=True)
         
         # todas las columnas que usaremos como entrada al modelo:
-        # Contiene: DiaSemana, Feriado, Estacion_Otoño, Estacion_Verano, Estacion_Primavera, Pandemia
+        # Contiene: DiaSemana, Feriado, Estacion_Otoño, Estacion_Verano, Estacion_Primavera, Pandemia, Clase
         # elimina esas dos columnas del DataFrame, dejando solo las variables que el modelo puede usar como entrada
         X = data_encoded.drop(columns=["Cantidad", "Exito"])
         # la variable que queremos predecir --> columna "Exito (1 o 0)"
@@ -700,6 +675,7 @@ def check():
     return True
 
 def grafico_barras_dias():
+    global df
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
     # calcula cuántos éxitos (1) y fracasos (0) hubo por día
@@ -717,8 +693,8 @@ def grafico_barras_dias():
     print(resumen_dias)
     print('fin')
     # colores distintos para cada barra
-    colores = ["#66BB6A", "#FFD54F", "#FF8A65", "#90CAF9", "#FFD54F", "#FF8A65", "#90CAF9"]  # verde, amarillo, naranja, celeste
-
+    #colores = ["#66BB6A", "#FFD54F", "#FF8A65", "#90CAF9", "#FFD54F", "#FF8A65", "#90CAF9"]  # verde, amarillo, naranja, celeste
+    colores = ["#FF0000", "#FF00FF", "#0000FF", "#FFA500", "#00FF00", "#333333", "#808080"]  
     # crear gráfico de barras
     plt.figure(figsize=(7,6)) # tamaño total del gráfico. lo que va a ocupar dentro del plano
     barras = plt.bar(resumen_dias.index, resumen_dias.values,  color=colores, edgecolor="black")
@@ -733,7 +709,7 @@ def grafico_barras_dias():
                  f"{altura:.1f}%", ha='center', va='bottom', fontsize=10, fontweight='bold')
 
     plt.title("Porcentaje de Éxito por Día")  # Título y etiquetas
-    plt.xlabel("Día del año")
+    plt.xlabel("Día de la semana")
     plt.ylabel("Porcentaje de éxito (%)")
     plt.ylim(0, 100)
     plt.grid(axis='y', linestyle='--', alpha=0.6)
@@ -1037,6 +1013,22 @@ def configuracion():
     ttk.Checkbutton(v, text="Mostra Previsualización", variable=chk_mostrar_preview_var).place(y=110, x=115)
 
     def ok():
+
+        if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
+            messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
+            entry_test_size.focus_set()
+            return
+
+        if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
+            messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
+            entry_random_state.focus_set()
+            return
+        
+        if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
+            messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
+            entry_max_iter.focus_set()
+            return
+
         guardar = False
         global config, model  
 
@@ -1194,7 +1186,7 @@ model = LogisticRegression(max_iter=config["max_iter"]) # Modelo de regresión l
 # llama al constructor de Tkinter que crea la ventana base
 # sobre esta ventanase se va a colocar todos los demás widgets y controles
 root = tk.Tk()
-root.title("Ejemplo de Regresión Logística") # fia un título principal
+root.title("Regresión Logística") # fia un título principal
 root.geometry("900x600") # establece el tamaño inicial de la ventana en píxeles. 900 píxeles de ancho y 600 píxeles de alto
 
 
@@ -1223,7 +1215,7 @@ menu_hacer = tk.Menu(menubar, tearoff=0)
 # Las acciones, procesos siempre invocan funciones de Python
 # pero sin ningún parámetro
 #menu_hacer.add_command(label="Importar TXT", command=importar_txt)
-menu_hacer.add_command(label="Importar CSV", command=importar_csv)
+menu_hacer.add_command(label="Importar CSV", command=importar_datos)
 # agrega una línea divisoria visual para separar grupos de opciones dentro del menú
 menu_hacer.add_separator()
 #menu_hacer.add_command(label="Salir", command=salir)
