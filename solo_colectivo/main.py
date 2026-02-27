@@ -119,6 +119,10 @@ def procesar_df():
         print(len(df))
         print(df.head())
 
+        df = df[df['CANT_TRJ'] > 0]
+        print(len(df))
+        print(df.head())
+
         df.rename(columns={'DIA_TRANSPORTE': 'Fecha', 'CANT_TRJ': 'Cantidad'}, inplace=True)
 
         # 2. Asegurar que la columna sea tipo datetime
