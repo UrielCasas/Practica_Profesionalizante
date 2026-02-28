@@ -27,14 +27,18 @@ from   datetime import datetime as dt
 import threading # permite ejecutar tareas en paralelo sin bloquear la interfaz gráfica
 import webbrowser # abre enlaces en el navegador web del usuario
 import numpy as np
-import matplotlib
+#import matplotlib
 # matplotlib.use('TkAgg') # Or 'Qt5Agg'
 import matplotlib.pyplot as plt
 from   sklearn.linear_model import LogisticRegression # quiere decir: del módulo llamadado sklearn.linear_model, importar el objeto llamado: LogisticRegression
 from   sklearn.model_selection import train_test_split
 from   sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from   sklearn.utils.validation import check_is_fitted # para verificar si el model está entrenado
+from   sklearn.metrics import log_loss
 import os
+from visorpdf import VisorPdf # clase para mostrar y navegar por un pdf
+import json
+
 
 # ---------------- VARIABLES GLOBALES ----------------
 df = None   # Aquí almacenaremos el DataFrame cargado
@@ -43,248 +47,274 @@ df = None   # Aquí almacenaremos el DataFrame cargado
 # los datos son complejos, puede necesitar más iteraciones para encontrar los coeficientes óptimos
 # Convergencia: nos referimos a cuándo el algoritmo “llega a una solución estable”
 # durante su proceso iterativo.Sucede cuando los ajustes de los parámetros ya no cambian significativamente
-model = LogisticRegression(max_iter=1000) # Modelo de regresión logística
+model = None # Modelo de regresión logística
 # X_train (features) y y_train (variable objetivo): valores para entrenar el modelo
 # X_test y y_test --> probar predicciones del modelo, y comparar predicciones con realidad
-X_train = None
-y_train = None
-X_test  = None
-y_test  = None
-X       = None
-y       = None
 
+X_train             = None
+y_train             = None
+X_test              = None
+y_test              = None
+X                   = None
+y                   = None
+app_dir             = os.path.dirname(__file__)
+directorio          = f"{app_dir}/csv/" # nombre del directorio donde están los archivos
+                                        # con los datos originales 
+informe             = f"{app_dir}/informe.pdf"                                               
+manual              = f"{app_dir}/manual.pdf"
+config_path         = f"{app_dir}/config.json"
+# los datos de estas variables se leen desde archivo json al que con la trayectoria arch_conf
+# formato del archivo json: {"test_size":float,"max_iter":int,"random_state":int,"mostrar_previsualizacion":bool}
+config              = None    # recibe los datos leides desde arch_conf
+# valores por default de claves en archivo config.json
+config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
 # Datos de información del software
-VERSION        = "1.2.0"
+VERSION        = "1.4.5"
 AUTORES        = "Casas Uriel - Fustet Arnaldo"
 ANIO           = "2025/2026"
 LINK_MANUAL    = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
 LINK_DESCARGAS = "https://github.com/UrielCasas/Practica_Profesionalizante"
 
 # ---------------- FUNCIONES ----------------
-def importar_dir():
-    global df, X, y
-    dir = os.path.dirname(__file__)
-    contenido = os.scandir(f"{dir}/csv/")
-
-    dfs = list()
-    for e in contenido:
-        _, extension = os.path.splitext(e.name)
-
-        if extension.lower() != ".csv":
-            continue
-    
-        data = pd.read_csv(f"{dir}/csv/{e.name}")
-        dfs.append(data)
-
-    df = pd.concat(dfs, ignore_index=True)
-    print(len(df))
-    print(df.head())
-
-    df = df[df['TIPO_TRANSPORTE'] != 'TOTAL']
-    print(len(df))
-    print(df.head())
-
-    df = df.groupby(['DIA_TRANSPORTE'], sort=False)['CANT_TRJ'].sum().reset_index()
-    print(len(df))
-    print(df.head())
-
-    df.rename(columns={'DIA_TRANSPORTE': 'Fecha', 'CANT_TRJ': 'Cantidad'}, inplace=True)
-
-    # 2. Asegurar que la columna sea tipo datetime
-    df['Fecha'] = pd.to_datetime(df['Fecha'])
-
-    # 3. Guardar el nombre del día de la semana (Lunes, Martes, etc.)
-    #df['dia_semana'] = df['Fecha'].dt.day_name()
-
-    # 4. Alternativa: Guardar el número del día (0=Lunes, 6=Domingo)
-    df['DiaSemana'] = df['Fecha'].dt.dayofweek
-
-    def es_feriado(fecha):
-        # import pandas as pd
-        # arreglo frds guada los días feriados de los 2020 al 2025
-        feriados =  [    '2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
-                    ,'2020-05-01','2020-05-25','2020-06-15','2020-06-20','2020-07-09','2020-07-10'
-                    ,'2020-08-17','2020-10-12','2020-11-23','2020-12-07','2020-12-08','2020-12-25'
-
-                    ,'2021-01-01','2021-02-15','2021-02-16','2021-03-24','2021-04-02'
-                    ,'2021-05-01','2021-05-24','2021-05-25','2021-06-20','2021-06-21','2021-07-09','2021-08-16'
-                    ,'2021-10-08','2021-10-11','2021-11-20','2021-11-22','2021-12-08','2021-12-25'
-
-                    ,'2022-01-01','2022-02-28','2022-03-01','2022-03-24','2022-04-02','2022-04-15'
-                    ,'2022-05-01','2022-05-25','2022-06-17','2022-06-20','2022-07-09','2022-08-15'
-                    ,'2022-10-07','2022-10-10','2022-11-20','2022-11-21','2022-12-08','2022-12-09','2022-12-25'
-
-                    ,'2023-01-01','2023-02-20','2023-02-21','2023-03-24','2023-04-02','2023-04-06','2023-04-07'
-                    ,'2023-05-01','2023-05-25','2023-06-17','2023-06-20','2023-07-09','2023-08-17'
-                    ,'2023-10-12','2023-11-20','2023-12-08','2023-12-25'
-
-                    ,'2024-01-01','2024-02-12','2024-02-13','2024-03-24','2024-04-24','2024-04-28','2024-04-29'
-                    ,'2024-05-01','2024-05-25','2024-06-17','2024-06-20','2024-06-21','2024-07-09','2024-08-17'
-                    ,'2024-10-11','2024-10-12','2024-11-18','2024-12-08','2024-12-25'
-
-                    ,'2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18'
-                    ,'2025-05-01','2025-05-02','2025-05-25','2025-06-16','2025-06-20','2025-07-09'
-                    ,'2025-08-15','2025-08-17','2025-10-10','2025-11-21','2025-11-24','2025-12-08','2025-12-25'
-                ]
-
-        feriados = [pd.Timestamp(x) for x in feriados]
-        return (fecha in feriados)
-
-    # rango de fecha donde hubo pandemia
-    pandemia = [ (pd.Timestamp(dt.strptime('2020-03-20', "%Y-%m-%d").date())), 
-                (pd.Timestamp(dt.strptime('2022-03-31', "%Y-%m-%d").date()))]
-
-    def es_pandemia(fecha):
-        pandemia = [ (pd.Timestamp(dt.strptime('2020-03-20', "%Y-%m-%d").date())), 
-                     (pd.Timestamp(dt.strptime('2022-03-31', "%Y-%m-%d").date()))]
-        return (fecha >= pandemia[0]) and (fecha <= pandemia[1])
-    
-
-    def obtener_estacion(fecha):
-        """
-        Determina estación del año de fecha
-        """
-        mes = fecha.month
-        dia = fecha.day
-        
-        if (mes == 12 and dia >= 21) or (mes in [1, 2]) or (mes == 3 and dia <= 20):
-            return 'Verano'
-        elif (mes == 3 and dia >= 21) or (mes in [4, 5]) or (mes == 6 and dia <= 20):
-            return 'Otoño'
-        elif (mes == 6 and dia >= 21) or (mes in [7, 8]) or (mes == 9 and dia <= 20):
-            return 'Invierno'
-        else:
-            return 'Primavera'
-
-    def hay_clases(fecha):
-        anio = fecha.year # obtiene el año de fecha
-        lectivo = {} # crea diccionario vacío
-        # agrega elementos al diccionario, uno por cada año 
-        # cada elemento contiene 4 int, en dos pares elementos 0 con 1 y 2 con 3
-        # los digitos de cada uno de los int representa aaaammdd
-        # indicando incio y fin de los períodos lectivos correspondientes al año 
-        lectivo[2020]  =[(pd.Timestamp(dt.strptime('20200309', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20200720', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20200731', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20201211', "%Y%m%d").date()))]
-        
-        lectivo[2021]  =[(pd.Timestamp(dt.strptime('20210301', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20210719', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20210730', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20211217', "%Y%m%d").date()))]
-        
-        lectivo[2022]  =[(pd.Timestamp(dt.strptime('20220302', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20220718', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20220729', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20221222', "%Y%m%d").date()))]
-
-        lectivo[2023]  =[(pd.Timestamp(dt.strptime('20230227', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20230717', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20230723', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20231222', "%Y%m%d").date()))]
-
-        lectivo[2024]  =[(pd.Timestamp(dt.strptime('20240301', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20240715', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20240726', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20241220', "%Y%m%d").date()))]
-
-        lectivo[2025]  =[(pd.Timestamp(dt.strptime('20250305', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20250721', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20250802', "%Y%m%d").date())),
-                        (pd.Timestamp(dt.strptime('20251222', "%Y%m%d").date()))]
-
-        if (lectivo[anio][0] <= fecha <= lectivo[anio][1]) or (lectivo[anio][2] <= fecha <= lectivo[anio][3]):
-            return True # si f está en alguno de los rangos que representan los períodos lectivos
-                    # devuelve True
-    
-        return False # devuelve False, no coincidió con ningún período lectivo
-
-    # Usar .isin() sobre la columna 'Fecha' para saber si está en el array feriados
-    # esta_en_feriados = df['Fecha'].isin(feriados)
-    # Se creó array paralelo a df, esta_en_feriados, contiene True o False según
-    # Fecha es feriado o no
-    # lo asignamos a un nuevo campo 'Feriado' 
-    # df['Feriado'] = esta_en_feriados
-
-    df['Feriado'] = df['Fecha'].apply(es_feriado)
-
-    # (df['col1'] > 5) & (df['col2'] < 10)
-    # df['Pandemia'] = np.where( (df['Fecha'] >= pandemia[0]) & (df['Fecha'] <= pandemia[1]) , True, False)
-
-    df['Pandemia'] = df['Fecha'].apply(es_pandemia)
-
-    df['Estacion'] = df['Fecha'].apply(obtener_estacion)
-
-    df['Clases'] = df['Fecha'].apply(hay_clases)
-
-    df = df[['DiaSemana', 'Feriado', 'Estacion', 'Clases', 'Pandemia', 'Cantidad']]
-
-    procesar_df()
-
-    return
-
-
-def importar_csv():
-    """Importa un archivo CSV con encabezados."""
-    global df, X, y
-   
-    archivo = filedialog.askopenfilename(
-        title="Seleccionar archivo CSV",
-        filetypes=[("Archivos CSV", "*.csv"), ("Todos los archivos", "*.*")]
-    )
-
-    if (not archivo):
-        escribir("Importación CSV cancelada.")
-        return
-
-    escribir("Importando CSV: " + archivo)
-
+def leer_dir(dir):
+    """
+    Docstring for leer_dir
+    Escanéa el continido del directorio de origen de datos.
+    Lee solo el contenido los archivos que tengan extensión .csv
+    retorna un DataFrame con todos los datos de los archivos
+    """
+    global df
     try:
-        #df = pd.read_csv(archivo, header=0)
-        df  = pd.read_csv(archivo, sep=';', header=0)
+        contenido = os.scandir(dir)
+        dfs = list()
+        for e in contenido:
+            _, extension = os.path.splitext(e.name)
+
+            if extension.lower() != ".csv":
+                continue
+        
+            data = pd.read_csv(f"{dir}/{e.name}")
+            dfs.append(data)
+
+        df = pd.concat(dfs, ignore_index=True)
+        return True
+    
     except Exception as e:
-        messagebox.showerror("Error al importar CSV", str(e))
+        messagebox.showerror("Error al importar directorio", str(e))
+        return False
+    
+def procesar_df():
+    try:    
+        global df
+        print(len(df))
+        print(df.head())
+
+        df = df[df['TIPO_TRANSPORTE'] != 'TOTAL']
+        print(len(df))
+        print(df.head())
+
+        df = df.groupby(['DIA_TRANSPORTE'], sort=False)['CANT_TRJ'].sum().reset_index()
+        print(len(df))
+        print(df.head())
+
+        df = df[df['CANT_TRJ'] > 0]
+        print(len(df))
+        print(df.head())
+
+        df.rename(columns={'DIA_TRANSPORTE': 'Fecha', 'CANT_TRJ': 'Cantidad'}, inplace=True)
+
+        # 2. Asegurar que la columna sea tipo datetime
+        df['Fecha'] = pd.to_datetime(df['Fecha'])
+
+        # 3. Guardar el nombre del día de la semana (Lunes, Martes, etc.)
+        #df['dia_semana'] = df['Fecha'].dt.day_name()
+
+        # 4. Alternativa: Guardar el número del día (0=Lunes, 6=Domingo)
+        df['DiaSemana'] = df['Fecha'].dt.dayofweek
+
+        def es_feriado(fecha):
+            # import pandas as pd
+            # arreglo frds guada los días feriados de los 2020 al 2025
+            feriados =  ['2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
+                        ,'2020-05-01','2020-05-25','2020-06-15','2020-06-20','2020-07-09','2020-07-10'
+                        ,'2020-08-17','2020-10-12','2020-11-23','2020-12-07','2020-12-08','2020-12-25'
+
+                        ,'2021-01-01','2021-02-15','2021-02-16','2021-03-24','2021-04-02'
+                        ,'2021-05-01','2021-05-24','2021-05-25','2021-06-20','2021-06-21','2021-07-09','2021-08-16'
+                        ,'2021-10-08','2021-10-11','2021-11-20','2021-11-22','2021-12-08','2021-12-25'
+
+                        ,'2022-01-01','2022-02-28','2022-03-01','2022-03-24','2022-04-02','2022-04-15'
+                        ,'2022-05-01','2022-05-25','2022-06-17','2022-06-20','2022-07-09','2022-08-15'
+                        ,'2022-10-07','2022-10-10','2022-11-20','2022-11-21','2022-12-08','2022-12-09','2022-12-25'
+
+                        ,'2023-01-01','2023-02-20','2023-02-21','2023-03-24','2023-04-02','2023-04-06','2023-04-07'
+                        ,'2023-05-01','2023-05-25','2023-06-17','2023-06-20','2023-07-09','2023-08-17'
+                        ,'2023-10-12','2023-11-20','2023-12-08','2023-12-25'
+
+                        ,'2024-01-01','2024-02-12','2024-02-13','2024-03-24','2024-04-24','2024-04-28','2024-04-29'
+                        ,'2024-05-01','2024-05-25','2024-06-17','2024-06-20','2024-06-21','2024-07-09','2024-08-17'
+                        ,'2024-10-11','2024-10-12','2024-11-18','2024-12-08','2024-12-25'
+
+                        ,'2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18'
+                        ,'2025-05-01','2025-05-02','2025-05-25','2025-06-16','2025-06-20','2025-07-09'
+                        ,'2025-08-15','2025-08-17','2025-10-10','2025-11-21','2025-11-24','2025-12-08','2025-12-25'
+                    ]
+
+            feriados = [pd.Timestamp(x) for x in feriados]
+            return (fecha in feriados)
+
+        # rango de fecha donde hubo pandemia
+        def es_pandemia(fecha):
+            pandemia = [ (pd.Timestamp(dt.strptime('2020-03-20', "%Y-%m-%d").date())), 
+                        (pd.Timestamp(dt.strptime('2022-03-31', "%Y-%m-%d").date()))]
+            return (fecha >= pandemia[0]) and (fecha <= pandemia[1])
+        
+
+        def obtener_estacion(fecha):
+            """
+            Determina estación del año de fecha
+            """
+            mes = fecha.month
+            dia = fecha.day
+            
+            if (mes == 12 and dia >= 21) or (mes in [1, 2]) or (mes == 3 and dia <= 20):
+                return 'Verano'
+            elif (mes == 3 and dia >= 21) or (mes in [4, 5]) or (mes == 6 and dia <= 20):
+                return 'Otoño'
+            elif (mes == 6 and dia >= 21) or (mes in [7, 8]) or (mes == 9 and dia <= 20):
+                return 'Invierno'
+            else:
+                return 'Primavera'
+
+        def hay_clases(fecha):
+            anio = fecha.year # obtiene el año de fecha
+            lectivo = {} # crea diccionario vacío
+            # agrega elementos al diccionario, uno por cada año 
+            # cada elemento contiene 4 int, en dos pares elementos 0 con 1 y 2 con 3
+            # los digitos de cada uno de los int representa aaaammdd
+            # indicando incio y fin de los períodos lectivos correspondientes al año 
+            lectivo[2020]  =[(pd.Timestamp(dt.strptime('20200309', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20200720', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20200731', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20201211', "%Y%m%d").date()))]
+            
+            lectivo[2021]  =[(pd.Timestamp(dt.strptime('20210301', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20210719', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20210730', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20211217', "%Y%m%d").date()))]
+            
+            lectivo[2022]  =[(pd.Timestamp(dt.strptime('20220302', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20220718', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20220729', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20221222', "%Y%m%d").date()))]
+
+            lectivo[2023]  =[(pd.Timestamp(dt.strptime('20230227', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20230717', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20230723', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20231222', "%Y%m%d").date()))]
+
+            lectivo[2024]  =[(pd.Timestamp(dt.strptime('20240301', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20240715', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20240726', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20241220', "%Y%m%d").date()))]
+
+            lectivo[2025]  =[(pd.Timestamp(dt.strptime('20250305', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20250721', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20250802', "%Y%m%d").date())),
+                            (pd.Timestamp(dt.strptime('20251222', "%Y%m%d").date()))]
+
+            if (lectivo[anio][0] <= fecha <= lectivo[anio][1]) or (lectivo[anio][2] <= fecha <= lectivo[anio][3]):
+                return True # si f está en alguno de los rangos que representan los períodos lectivos
+                        # devuelve True
+        
+            return False # devuelve False, no coincidió con ningún período lectivo
+
+        # Usar .isin() sobre la columna 'Fecha' para saber si está en el array feriados
+        # esta_en_feriados = df['Fecha'].isin(feriados)
+        # Se creó array paralelo a df, esta_en_feriados, contiene True o False según
+        # Fecha es feriado o no
+        # lo asignamos a un nuevo campo 'Feriado' 
+        # df['Feriado'] = esta_en_feriados
+
+        df['Feriado'] = df['Fecha'].apply(es_feriado)
+
+        # (df['col1'] > 5) & (df['col2'] < 10)
+        # df['Pandemia'] = np.where( (df['Fecha'] >= pandemia[0]) & (df['Fecha'] <= pandemia[1]) , True, False)
+
+        df['Pandemia'] = df['Fecha'].apply(es_pandemia)
+
+        df['Estacion'] = df['Fecha'].apply(obtener_estacion)
+
+        df['Clases'] = df['Fecha'].apply(hay_clases)
+
+        df = df[['DiaSemana', 'Feriado', 'Estacion', 'Clases', 'Pandemia', 'Cantidad']]
+
+        if chk_preview_var.get():
+            mostrar_preview()
+        
+        return True
+    
+    except Exception as e:
+        messagebox.showerror("Error procesando datos", str(e))
+        return False
+
+def preparar_modelo():
+    try:
+        global df, X, y
+        status_var.set(f"CSV cargado: {len(df)} filas, {len(df.columns)} columnas.")
+
+        # variable binaria de éxito
+        # -----------------------------
+        # convertir ese valor continuo en una variable binaria para usar regresión logística
+        # 1 → “éxito” (Cantidad buena) hubo más viajes que la media
+        # 0 → “fracaso” (Cantidad baja)
+        # median(): metodo que devuelve el valor medio de la columna.
+        umbral = df["Cantidad"].median()
+        # crea un array de valores booleanos (True/False) comparando cada fila con la mediana. lleva a cabo una serie de comparaciones
+        # y realiza un filtro general a partir del 'umbral' calculado
+        df["Exito"] = (df["Cantidad"] > umbral).astype(int)   
+
+        # codificación de categorías
+        # -----------------------------
+        # pd.get_dummies(): transforma las variables cualitativas y categoricas en columnas binarias (0/1)
+        # columns=["Estacion"] --> solo codifica esas columnas.
+        # 'Invierno': se usa como categoría de referencia (la base con la que se comparan las demás)
+        # Si todas las variables Estacion_Otoño, Estacion_Primavera, Estacion_Verano son 0, entonces la estación es Invierno por defecto
+        data_encoded = pd.get_dummies(df, columns=["Estacion"], drop_first=True)
+        
+        # todas las columnas que usaremos como entrada al modelo:
+        # Contiene: DiaSemana, Feriado, Estacion_Otoño, Estacion_Verano, Estacion_Primavera, Pandemia
+        # elimina esas dos columnas del DataFrame, dejando solo las variables que el modelo puede usar como entrada
+        X = data_encoded.drop(columns=["Cantidad", "Exito"])
+        # la variable que queremos predecir --> columna "Exito (1 o 0)"
+        # cuando entrenamos el modelo con model.fit(X, y), el modelo aprende cómo cada variable afecta la probabilidad de éxito.
+        y = data_encoded["Exito"]
+        return True
+    
+    except Exception as e:
+        messagebox.showerror("Error procesando datos", str(e))
+        return False      
+
+def importar_datos():
+    """
+    Docstring for importar_datos
+    Escanéa el contenido del usando leer_dir() y 
+    procesa la información con procesar_df y preparar_modelo()
+    """
+    global df, X, y, directorio
+
+    if not leer_dir(directorio):
         return
 
-def procesar_df():
-    global df, X, y
-    status_var.set(f"CSV cargado: {len(df)} filas, {len(df.columns)} columnas.")
-
-    if chk_preview_var.get():
-        mostrar_preview()
-
-    # variable binaria de éxito
-    # -----------------------------
-    # convertir ese valor continuo en una variable binaria para usar regresión logística
-    # 1 → “éxito” (Cantidad buena) hubo más viajes que la media
-    # 0 → “fracaso” (Cantidad baja)
-    # median(): metodo que devuelve el valor medio de la columna.
-    umbral = df["Cantidad"].median()
-    # crea un array de valores booleanos (True/False) comparando cada fila con la mediana. lleva a cabo una serie de comparaciones
-    # y realiza un filtro general a partir del 'umbral' calculado
-    df["Exito"] = (df["Cantidad"] > umbral).astype(int)   
-
-    # codificación de categorías
-    # -----------------------------
-    # pd.get_dummies(): transforma las variables cualitativas y categoricas en columnas binarias (0/1)
-    # columns=["Estacion"] --> solo codifica esas columnas.
-    # 'Invierno': se usa como categoría de referencia (la base con la que se comparan las demás)
-    # Si todas las variables Estacion_Otoño, Estacion_Primavera, Estacion_Verano son 0, entonces la estación es Invierno por defecto
-    data_encoded = pd.get_dummies(df, columns=["Estacion"], drop_first=True)
+    if not procesar_df():
+        return
     
-    # todas las columnas que usaremos como entrada al modelo:
-    # Contiene: DiaSemana, Feriado, Estacion_Otoño, Estacion_Verano, Estacion_Primavera, Pandemia
-    # elimina esas dos columnas del DataFrame, dejando solo las variables que el modelo puede usar como entrada
-    X = data_encoded.drop(columns=["Cantidad", "Exito"])
-    # la variable que queremos predecir --> columna "Exito (1 o 0)"
-    # cuando entrenamos el modelo con model.fit(X, y), el modelo aprende cómo cada variable afecta la probabilidad de éxito.
-    y = data_encoded["Exito"]
-        
-    return
+    if not preparar_modelo():
+        return
 
-def entrenar():
-    global X, y, model, X_train, y_train, X_test, y_test
-
+def entrenar(msj=True):
+    global X, y, model, X_train, y_train, X_test, y_test, df, config
+    
     if model is None:
         messagebox.showinfo("Alerta","Error interno, no hay definido un ningún model")
         return
@@ -301,7 +331,7 @@ def entrenar():
     # pero la aleatoriedad puede generar diferentes divisiones cada vez que se ejecuta el código
     # X_train (features) y y_train (variable objetivo): valores para entrenar el modelo
     # X_test y y_test --> probar predicciones del modelo, y comparar predicciones con realidad
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=455)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=config["test_size"], random_state=config["random_state"])
     
     # fit(): es el método que ajusta el modelo a los datos de entrenamiento
     # calcula los coeficientes β (Betas) para cada variable en 'X_train' que maximizan la
@@ -313,6 +343,8 @@ def entrenar():
     # el modelo usa X_test para predecir y luego comparamos con y_test para ver qué tan bien lo hizo
     model.fit(X_train, y_train)
 
+    if msj:
+        messagebox.showinfo("Mensaje", f"Modelo Entrenado!")
     return
 
 def verificar():
@@ -325,8 +357,10 @@ def verificar():
         check_is_fitted(model)
     except Exception:
         # el modelo no está entrenado, lo entrenamos antes
-        entrenar()
+        entrenar(False)
     
+    pd.options.display.float_format = '{:.2f}'.format
+
     # Evaluación del modelo
     # -----------------------------
     # las variables de entrada que el modelo no vio durante el entrenamiento
@@ -337,19 +371,24 @@ def verificar():
     # compara las predicciones (y_pred) con los valores reales (y_test)
     # accuracy_score(y_test, y_pred): compara predicciones con la realidad y calcula porcentaje de aciertos
     acc = accuracy_score(y_test, y_pred)
+
+    # Obtiene las probabilidades de predicción para el conjunto del test.
+    # log_loss requiere de las probabilidades, no las predicciónes de la clase final.
+    y_pred_proba = model.predict_proba(X_test)
+
+    # Calcula el log loss
+    # La función toma los verdaderos labels y las probabilidades de predicción.
+    loss = log_loss(y_test, y_pred_proba)
+
     # muestra el resultado en pantalla con 2 decimales de presición
+    messagebox.showinfo("Resultado", f"Exactitud del modelo: {acc:.2f}\nLog Loss: {loss:.4f}")
+    # muestra info por consola
+    print(f"Log Loss: {loss:.4f}")
     print(f"Exactitud del modelo: {acc:.2f}")
-
-    pd.options.display.float_format = '{:.2f}'.format
-    verificacion = pd.DataFrame(acc)   
     
-    mostrar_datos("Verificación", verificacion)
-    return
-    
-    #print(f"Exactitud del modelo: {acc}")
     return
 
-def graficar():
+def solicitar_datos():
     punto = None
     
     # Crea la ventana para solicitar al usuario datos
@@ -420,7 +459,7 @@ def graficar():
                     "Pandemia":  [chk_pandemia_var.get()], #[ ("1" if chk_pandemia_var.get() else "0") ]
                 })
         
-        mostrar_grafico(punto)
+        graficar(punto)
 
         #messagebox.showinfo("Alerta", estaciones_combo.get()+' - '+dias_combo.get()+' '+str(dias_combo.current()))
         #v.grab_release()
@@ -458,8 +497,7 @@ def graficar():
     root.wait_window(v)
     return punto # devuelve el punto si se precionó ok o None si se cerró la ventana
   
-
-def mostrar_grafico(nuevo_punto):
+def graficar(nuevo_punto):
     global model
 
     #nuevo_punto = solicitar_punto()
@@ -541,8 +579,8 @@ def mostrar_grafico(nuevo_punto):
     # se usará para pasar al modelo y obtener la probabilidad de éxito para cada valor de día de la semana.
     df_pred = pd.DataFrame({
         "DiaSemana": dias_values,
-        "Feriado": [clases_constante]*100,
-        "Clases": [feriado_constante]*100,
+        "Feriado":  [clases_constante]*100,
+        "Clases":   [feriado_constante]*100,
         "Estacion": [estacion_constante]*100,
         "Pandemia": [pandemia_constante]*100
     })
@@ -651,7 +689,6 @@ def grafico_barras_dias():
     if not check():
         return
 
-
     resumen_dias = df.groupby("DiaSemana")["Exito"].mean() * 100  # promedio de éxito por estación (%)
 
     orden_dias = [0, 1, 2, 3, 4, 5, 6] # ordenar las estaciones según un orden lógico
@@ -662,7 +699,7 @@ def grafico_barras_dias():
     print(resumen_dias)
     print('fin')
     # colores distintos para cada barra
-    colores = ["#66BB6A", "#FFD54F", "#FF8A65", "#90CAF9", "#FFD54F", "#FF8A65", "#90CAF9"]  # verde, amarillo, naranja, celeste
+    colores = ["#FF0000", "#FF00FF", "#0000FF", "#FFA500", "#00FF00", "#333333", "#808080"]  # verde, amarillo, naranja, celeste
 
     # crear gráfico de barras
     plt.figure(figsize=(7,6)) # tamaño total del gráfico. lo que va a ocupar dentro del plano
@@ -691,8 +728,6 @@ def grafico_barras_dias():
 
     plt.show()
 
-
-
 def grafico_barras():
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
@@ -700,7 +735,6 @@ def grafico_barras():
 
     if not check():
         return
-
 
     resumen_estacion = df.groupby("Estacion")["Exito"].mean() * 100  # promedio de éxito por estación (%)
 
@@ -792,13 +826,6 @@ def estadisticas():
     mostrar_datos("Estadísticas", estadisticas)
     return
 
-def custom_messagebox(titulo, texto):
-    top = tk.Toplevel()
-    top.title(titulo)
-    # Etiqueta con fuente "Arial" tamaño 14 en negrita 
-    tk.Label(top, text=texto, font=("Arial", 14, "bold"), padx=20, pady=20).pack()
-    tk.Button(top, text="OK", command=top.destroy).pack(pady=10)
-
 def mostrar_datos(titulo, datos):
     
     #if datos == None:
@@ -823,43 +850,6 @@ def mostrar_datos(titulo, datos):
 
     return
 
-def estadisticas_texto():
-    """Importa un archivo CSV con encabezados."""
-    global df  
-
-    if df is None:
-        return
-    
-    columna = df["Cantidad"]
-
-    minimo              = columna.min()
-    maximo              = columna.max()
-    media               = columna.mean()
-    mediana             = columna.median()
-    rango               = maximo - minimo
-    varianza            = columna.var(ddof=1)          # ddof=1: varianza muestral
-    desviacion_estandar = columna.std(ddof=1)
-    coef_variacion = desviacion_estandar / media
-    q1 = columna.quantile(0.25)   # Primer cuartil
-    q2 = columna.quantile(0.50)   # Segundo cuartil (mediana)
-    q3 = columna.quantile(0.75)   # Tercer cuartil
-
-    datos  = f"         valor mínimo ={minimo}\n"
-    datos += f"         valor máximo ={maximo}\n"
-    datos += f"                media ={media}\n"
-    datos += f"              mediana ={mediana}\n"
-    datos += f"                rango ={rango}\n"
-    datos += f"             varianza ={varianza}\n"
-    datos += f" desviacion estándard ={desviacion_estandar}\n"
-    datos += f"coeficiente variación ={coef_variacion}\n"
-    datos += f"       primer cuartil ={q1}\n"
-    datos += f"      segundo cuartil ={q2}\n"
-    datos += f"       tercer cuartil ={q3}\n"
-
-    mostrar_datos("Estadísticas", datos)
-    
-    return
-
 def actualizar_hora():
     """actualiza la hora en la etiqueta cada segundo."""
     hora_actual = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -869,6 +859,9 @@ def actualizar_hora():
 
 def escribir(texto):
     """muestra texto en el panel derecho."""
+    if texto.strip() == '':
+        text_output.delete('1.0', tk.END)
+        return
     text_output.insert("end", texto + "\n")
     #text_output.see("end")  # auto-scroll hacia el final
 
@@ -889,6 +882,17 @@ def cuenta_regresiva_y_salir():
         escribir(f"Saliendo en {i} ...")
         time.sleep(1)
     root.after(0, root.destroy)
+
+def mostrar_previsualizacion():
+    """
+    """
+    if df is None:
+        return
+    
+    if chk_preview_var.get():
+        mostrar_preview()
+    else:
+        escribir(" ")
 
 def salir():
     """pregunta y, si acepta, hace cuenta regresiva sin trabar la UI."""
@@ -940,12 +944,254 @@ def mostrar_info():
               width=10                                      # Define el ancho del botón en caracteres.
               ).pack(pady=10, side="right", padx=(0,20))    # Posiciona el botón debajo del link a la derecha alejado del borde unos 20 píxeles, y 10 píxeles alejados de debajo y arriba.
 
+def configuracion():
+    global config
+    
+    # Crea la ventana para solicitar al usuario datos
+    v = tk.Toplevel(root)
+    v.title("Ingresar datos de configuración")
+    v.geometry("365x180")
+    v.resizable(False,False)
+    v.transient(root) # La hace modal (bloquea la principal)
+    v.grab_set()      # Captura eventos (modalidad)
+    
+    #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
+
+    dir = os.path.dirname(__file__)
+    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img_lbl = tk.Label(v, image=img).place(y=20, x=15)
+
+    def validar_int(S):
+        """
+        Docstring for validate_numeric
+        Verifica que la entrada del tk.Entry sea un int positivo
+        :param s: string a validar (usada en tk.Entry)
+        """        
+        if S.isdigit() or S == "":
+            # caracteres permitidos
+            return True
+        else:
+            # s contiene algún caracter extraño
+            v.bell()
+            return False
+                
+    def validar_float(S):
+        """
+        Docstring for validar_float
+        
+        :param S: string con datos a validar
+        """
+        if S.strip() == "":
+            return True
+        try:
+            float(S)
+            return True
+        except ValueError:
+            v.bell() 
+            return False
+
+    val_int   = v.register(validar_int)
+    val_float = v.register(validar_float)
+
+    label_max_iter = tk.Label(v, text="max iter:")
+    label_max_iter.place(y=80, x=115)
+    entry_max_iter =  tk.Entry(v)
+    entry_max_iter.insert(0,str(config["max_iter"]))
+    entry_max_iter.configure( validate="key", validatecommand=(val_int,'%S') )
+    entry_max_iter.place(y=80, x=200)
+    
+    label_test_size = tk.Label(v, text="test size:")
+    label_test_size.place(y=20, x=115)
+    entry_test_size =  tk.Entry(v,validate="key")
+    entry_test_size.insert(0,str(config["test_size"]))
+    entry_test_size.configure( validate="key", validatecommand=(val_float,'%S') )
+    entry_test_size.place(y=20, x=200)
+
+    label_random_state = tk.Label(v, text="random state:")
+    label_random_state.place(y=50, x=115)
+    entry_random_state =  tk.Entry(v)
+    entry_random_state.insert(0,str(config["random_state"]))
+    entry_random_state.configure( validate="key", validatecommand=(val_int,'%S') )
+    entry_random_state.place(y=50, x=200)
+
+
+    chk_mostrar_preview_var = tk.BooleanVar(value=config["mostrar_preview"])
+    ttk.Checkbutton(v, text="Mostra Previsualización", variable=chk_mostrar_preview_var).place(y=110, x=115)
+
+    def ok():
+
+        if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
+            messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
+            entry_test_size.focus_set()
+            return
+
+        if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
+            messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
+            entry_random_state.focus_set()
+            return
+        
+        if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
+            messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
+            entry_max_iter.focus_set()
+            return
+
+        guardar = False
+        global config, model  
+
+        config["mostrar_preview"]  = chk_mostrar_preview_var.get()
+        if config["mostrar_preview"] != chk_preview_var.get():
+            guardar = True
+            chk_preview_var.set(config["mostrar_preview"])
+            if df is not None:
+                mostrar_previsualizacion()
+        
+        # chequear si hubo algún cambio
+        if  ( config["random_state"] !=  int(entry_random_state.get()) or \
+              config["max_iter"] != int(entry_max_iter.get()) or \
+              config["test_size"] != float(entry_test_size.get()) ):
+            guardar = True
+            # messagebox.showinfo("Datos",f"{entry_test_size.get()} - {entry_random_state.get()} - {entry_max_iter.get()}")
+            config["random_state"]             = int(entry_random_state.get())
+            config["max_iter"]                 = int(entry_max_iter.get())
+            config["test_size"]                = float(entry_test_size.get())                       
+
+            if df is not None: # Si hay DataFrame cargado se vuelve a generar/entrenar el model                
+
+                model = LogisticRegression(max_iter=config["max_iter"]) # Modelo de regresión logística
+
+                preparar_modelo()
+
+                entrenar(False)
+
+                verificar()
+
+        if guardar:
+            archivo_config = open(f"{app_dir}/config.json",'w')
+            json.dump(config, archivo_config)
+            archivo_config.close()
+
+        v.grab_release()
+        v.destroy()
+        return
+    
+    def cancelar():
+        v.grab_release()
+        v.destroy()
+        return
+    
+    footer = tk.Frame(v, relief='flat', borderwidth=0, height=45, bg="#F3F3F3")
+    footer.pack(side='bottom', fill='x')
+
+    # Botón para aceptar el ingreso
+    ttk.Button(footer, text="Aceptar", command=ok).place(y=15, x=10)
+    ttk.Button(footer, text="Cancelar", command=cancelar).place(y=15, x=280)
+
+
+    # Centramos la ventana de carga sobre la principal
+    v.update_idletasks()
+    posx = root.winfo_x() + root.winfo_width() // 2 - v.winfo_width() // 2
+    posy = root.winfo_y() + root.winfo_height() // 2 - v.winfo_height() // 2
+    v.geometry(f"+{posx}+{posy}")
+
+    # espera que el usuario cargue los datos
+    root.wait_window(v)
+    return #punto # devuelve el punto si se precionó ok o None si se cerró la ventana
+
+def crear_archivo_config():
+    global config, config_path, config_default
+    try:
+        config         = config_default
+        archivo_config = open(config_path,'w')
+        json.dump(config, archivo_config)
+        archivo_config.close()
+        return True
+    except Exception as e:
+        messagebox.showerror(f"{e}")
+        return False
+
+def es_int(S):
+    """
+    Docstring for es_int
+    Verifica S sea un int positivo
+    :param S: string a validar
+    """
+    if S.strip() == "":
+        return False
+    try:
+        int(S)
+        return True
+    except ValueError:
+        return False
+                
+def es_float(S):
+    """
+    Docstring for es_float
+    Verifica que S sea un float válido.
+    :param S: string con datos a validar
+    """
+    if S.strip() == "":
+        return False
+    try:
+        float(S)
+        return True
+    except ValueError:
+        return False
+
+# ---------------- FUNCIÓN PARA LEER ARCHIVO CONFIG ----------------
+def leer_archivo_config():
+    """
+    Docstring for leer_archivo_config
+    """
+    global config_path, config
+    try:
+       
+        archivo_config = open(config_path)
+        config         = json.load(archivo_config)
+        archivo_config.close()
+
+        if    "max_iter" not in config \
+        or "mostrar_preview" not in config \
+        or "random_state" not in config \
+        or "test_size" not in config:
+            if not crear_archivo_config():
+                messagebox.showerror("Error Fatal", "Error fatal no se puede ejecutar la aplicación.\nContacte al servicio técnico")
+                exit()
+
+            messagebox.showinfo("Mensaje", "Se creo un nuevo .json porque se encontro una anomalía en el contenido.")
+                
+        if not es_int(str(config["max_iter"])) or not es_int(str(config["random_state"])) \
+            or not es_float(str(config["test_size"])) or not isinstance(config["mostrar_preview"], bool):
+            if not crear_archivo_config():
+                messagebox.showerror("Error Fatal", "Error fatal no se puede ejecutar la aplicación.\nContacte al servicio técnico")
+                exit()
+            
+            messagebox.showinfo("Mensaje", "Se creo un nuevo .json porque se encontro una anomalía en el contenido.")
+
+    except Exception as e:
+        if not crear_archivo_config():
+            messagebox.showerror("Error Fatal", "Error fatal no se puede ejecutar la aplicación.\nContacte al servicio técnico")
+            return False
+        print(e)
+        messagebox.showinfo("Mensaje", "No se encontró archivo config.json y se creó uno nuevo.")
+
+    return True
+
+
+# ---------------- CARGA DE DATOS DE LA APLICACION ------------------
+
+if not leer_archivo_config():
+    exit()
+
+print(config)
+
+model = LogisticRegression(max_iter=config["max_iter"]) # Modelo de regresión logística
+
 
 # ---------------- INTERFAZ GRÁFICA ----------------
 # llama al constructor de Tkinter que crea la ventana base
 # sobre esta ventanase se va a colocar todos los demás widgets y controles
 root = tk.Tk()
-root.title("Ejemplo de Intefaz Gráfica") # fia un título principal
+root.title("Regresión Logística") # fia un título principal
 root.geometry("900x600") # establece el tamaño inicial de la ventana en píxeles. 900 píxeles de ancho y 600 píxeles de alto
 
 # variables asociadas a labels y checkbox
@@ -955,6 +1201,9 @@ root.geometry("900x600") # establece el tamaño inicial de la ventana en píxele
 hora_var = tk.StringVar() # se usa para mostrar la hora actual en una etiqueta (Label)
 status_var = tk.StringVar(value="") # se usa para mostrar mensajes de estado en la barra inferior
 chk_preview_var = tk.BooleanVar(value=True) # está asociada al Checkbutton "Mostrar previsualización"
+
+chk_preview_var.set(config["mostrar_preview"])
+
 
 # tk.Menu: crea una barra de menú
 # root: se asocia al Tk() principal para que dicho menú aparezca arriba de la ventana
@@ -970,11 +1219,13 @@ menu_hacer = tk.Menu(menubar, tearoff=0)
 # Las acciones, procesos siempre invocan funciones de Python
 # pero sin ningún parámetro
 #menu_hacer.add_command(label="Importar TXT", command=importar_txt)
-menu_hacer.add_command(label="Importar CSV", command=importar_csv)
+menu_hacer.add_command(label="Importar CSV", command=importar_datos)
 # agrega una línea divisoria visual para separar grupos de opciones dentro del menú
 menu_hacer.add_separator()
 #menu_hacer.add_command(label="Salir", command=salir)
 menubar.add_cascade(label="Hacer", menu=menu_hacer)
+#menu_hacer.add_command(label="Salir", command=salir)
+menu_hacer.add_cascade(label="Configuración", command=configuracion)
 
 menu_ayuda = tk.Menu(menubar, tearoff=0)
 menu_ayuda.add_command(label="Manual PDF", command=abrir_manual)
@@ -1005,8 +1256,27 @@ frame_top.pack(fill="x", pady=5)
 # padx=10: Espacio horizontal (izquierda y derecha). Evita que el label quede pegado al borde
 ttk.Label(frame_top, textvariable=hora_var).pack(side="right", padx=10)
 
+# 2. Create a Notebook (tab control)
+# The main window 'root' is the parent
+notebook = ttk.Notebook(root)
+notebook.pack(expand=1, fill="both") # Makes the notebook expand and fill the window
+
+# 3. Create frames for each tab
+app_tab     = ttk.Frame(notebook)
+manual_tab  = VisorPdf(notebook,abrir=False,cerrar=False)
+informe_tab = VisorPdf(notebook,abrir=False,cerrar=False)
+
+# 4. Add the frames as tabs to the notebook
+notebook.add(app_tab, text='Aplicación')
+notebook.add(manual_tab, text='Manual')
+notebook.add(informe_tab, text='Informe')
+
+informe_tab.abrir_pdf(informe)
+
+manual_tab.abrir_pdf(manual)
+
 # Frame principal
-frame_main = ttk.Frame(root)
+frame_main = ttk.Frame(app_tab)
 # fill: indica hacia dónde se estira el contenedor si hay espacio disponible
 # "x": horizontal. "y": vertical. "both": ambas direcciones
 # expand=False: el frame mantiene su tamaño mínimo. expand=True: se le permite ocupar el espacio libre restante
@@ -1029,14 +1299,14 @@ frame_controls.pack(side="left", fill="y", padx=10, pady=10)
 # importar_txt es el nombre de una función
 # .pack(): es el método que posiciona el botón dentro del frame
 #ttk.Button(frame_controls, text="Importar TXT", command=importar_txt).pack(fill="x", pady=5)
-ttk.Button(frame_controls, text="Importar CSV", command=importar_dir).pack(fill="x", pady=5)
+ttk.Button(frame_controls, text="Importar CSV", command=importar_datos).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Calcular estadísticas", command=estadisticas).pack(fill="x", pady=5)
 #ttk.Button(frame_controls, text="Salir", command=salir).pack(fill="x", pady=5)
 
 #ttk.Button(frame_controls, text="test", command=entrenar).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Entrenar", command=entrenar).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Verificar", command=verificar).pack(fill="x", pady=5)
-ttk.Button(frame_controls, text="Graficar", command=graficar).pack(fill="x", pady=5)
+ttk.Button(frame_controls, text="Graficar", command=solicitar_datos).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Barras", command=grafico_barras).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Barras Días", command=grafico_barras_dias).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Salir", command=salir).pack(fill="x", pady=5)
@@ -1070,7 +1340,7 @@ ttk.Button(frame_controls, text="Salir", command=salir).pack(fill="x", pady=5)
 # booleana (Sí / No, Verdadero / Falso)
 # variable=chk_preview_var: asocia el checkbox a una variable de control (BooleanVar())
 # chk_preview_var.get() == True: checkbox marcado. chk_preview_var.get() == False: checkbox desmarcado
-ttk.Checkbutton(frame_controls, text="Mostrar previsualización", variable=chk_preview_var).pack(anchor="w", pady=10)
+ttk.Checkbutton(frame_controls, text="Mostrar previsualización", variable=chk_preview_var, command=mostrar_previsualizacion).pack(anchor="w", pady=10)
 
 # panel derecho (text)
 # tk.Text es un cuadro de texto multilínea. permite mostrar y/o escribir
@@ -1100,9 +1370,11 @@ ttk.Label(root, textvariable=status_var, relief="sunken", anchor="w").pack(fill=
 # ---------- ENLACES INFERIORES ----------
 import webbrowser # importa el módulo webbrowser, que permite abrir enlaces en por medio de un navegador
 
-def abrir_descarga(event):
+def abrir_enlace_manual(event):
      # abre la página web indicada en el navegador predeterminado 
-    webbrowser.open("https://github.com/UrielCasas/TPF_ACL.git")
+    webbrowser.open(LINK_MANUAL)
+
+ttk.Label(root, text=f"Versión: {VERSION}").pack(side="left", padx=15)
 
 # crea un Label (una etiqueta de texto) que actuará como un enlace clickeable
 # root: es la ventana principal donde se mostrará el Label
@@ -1116,57 +1388,10 @@ link_descarga.pack(pady=5)
 # bind() asocia un evento a una función
 # "<Button-1>": significa "clic izquierdo del mouse"
 # abrir_descarga: función que se ejecutará al hacer clic, y que abrirá la página web
-link_descarga.bind("<Button-1>", abrir_descarga)
-
-def filtro_suave():
-    return
-    if (df is None):
-        messagebox.showwarning("Sin datos", "Primero importe un archivo.")
-        return
-    
-    palabra = filtro_text.get("1.0", "end").strip()
-    if (palabra == ""):
-        messagebox.showinfo("Vacío", "Escriba una palabra para filtrar.")
-        return
-    
-     # máscara: True donde coincide, False donde no
-     # df.astype(str): convierte todo el DataFrame a texto
-     # .apply(lambda col: ...): ecorre columna por columna
-     # col: es una columna completa. se aplica la función a cada columna
-     # col.str.contains(palabra, case=False, na=False): Busca si cada celda de la columna contiene la palabra
-     # case=False: ignora mayúsculas/minúsculas. na=False: si una celda es NaN, la trata como: “no coincide”: devuelve False
-     # mask: es un DataFrame del mismo tamaño, con: True donde la palabra coincide. False donde NO coincide
-    mask = df.astype(str).apply(lambda col: col.str.contains(palabra, case=False, na=False))
-
-    # copia del DF solo para mostrar
-    # df.copy(): hace una copia para no modificar tu DataFrame original
-    df_filtrado = df.copy().astype(str)
-
-    # reemplazar por blanco cuando no coincide
-    # deja el valor original cuando la condición es True
-    # reemplaza por “ ” (cadena vacía) cuando la condición es False
-    df_filtrado = df_filtrado.where(mask, "")
-    
-    # mostrar máximo 50 filas para evitar que explote el TextBox
-    # "1.0": 1 --> fila 1. 0 --> columna 0. Significa: primer caracter del TextBox
-    # end: indica el final del TextBox, sin importar cuántas líneas tenga
-    text_output.delete("1.0", "end")
-    # inserta texto dentro del TextBox
-    # toma solo las primeras 50 filas del DataFrame
-    # evita que Tkinter se cuelgue con muchísimas filas
-    text_output.insert("end", df_filtrado.head(50).to_string())
-
-# tk.Text: crea un cuadro de texto multilínea (TextBox)
-# frame_controls: indica en qué contenedor (frame) se va a colocar
-#filtro_text = tk.Text(frame_controls, height=1, width=20)
-# pack: coloca el TextBox en la interfaz
-#filtro_text.pack(pady=5)
-# cuando el usuario hace clic → se ejecuta la función filtro_suave()
-#ttk.Button(frame_controls, text="Filtro", command=filtro_suave).pack(pady=5)
+link_descarga.bind("<Button-1>", abrir_enlace_manual)
 
 # iniciar actualización de hora
 actualizar_hora()
 # es el loop principal de la interfaz gráfica
 # la ventana se vuelve interactiva y se queda “escuchando” eventos
 root.mainloop()
-
