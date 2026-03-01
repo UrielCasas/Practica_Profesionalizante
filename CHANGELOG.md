@@ -2,6 +2,11 @@
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
 
+## [1.4.6] - 2026-03-01
+
+### Fixed
+- Se corrigió control de valores ingresados en configuración, error cuando el usuario ingresaba un campo vacio.
+
 ## [1.4.5] - 2026-02-27
 
  ### Removed
@@ -102,6 +107,7 @@ Todas las novedades notables de este proyecto se documentarán en este archivo.
 
 _First release._
 
+[1.4.5]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.5
 [1.4.4]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.4
 [1.4.3]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.3
 [1.4.2]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.2
@@ -109,6 +115,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
