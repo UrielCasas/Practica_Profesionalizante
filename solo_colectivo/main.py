@@ -313,6 +313,7 @@ def importar_datos():
 
 def entrenar(msj=True):
     global X, y, model, X_train, y_train, X_test, y_test, df, config
+
     if model is None:
         messagebox.showerror("Alerta","Error interno, no hay definido un ningún model")
         return
@@ -370,11 +371,11 @@ def verificar():
     # accuracy_score(y_test, y_pred): compara predicciones con la realidad y calcula porcentaje de aciertos
     acc = accuracy_score(y_test, y_pred)   
     
-    # 4. Get predicted probabilities for the test set
-    # log_loss requires probabilities, not the final class predictions
+    # Calculamos probacilidades de las predicciones para el conjunto de test
+    # log_loss requiere probabilidades no las predicciones finales
     y_pred_proba = model.predict_proba(X_test)
-    # 5. Calculate the log loss
-    # The function takes the true labels and the predicted probabilities
+    # Calculamos el log loss
+    # La funcion toma los valores de test de "y" y las probabilidades de predicciones
     loss = log_loss(y_test, y_pred_proba)
 
     # muestra el resultado en pantalla con 2 decimales de presición
@@ -386,6 +387,7 @@ def verificar():
     return
 
 def solicitar_datos():
+    global app_dir
     punto = None
     
     # Crea la ventana para solicitar al usuario datos
@@ -398,8 +400,7 @@ def solicitar_datos():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
     img_lbl = tk.Label(v, image=img).place(y=20, x=15)
     
     # Creamos Comboboxes (listas desplegables) para la selección de
@@ -1193,7 +1194,6 @@ root = tk.Tk()
 root.title("Regresión Logística") # fia un título principal
 root.geometry("900x600") # establece el tamaño inicial de la ventana en píxeles. 900 píxeles de ancho y 600 píxeles de alto
 
-
 # variables asociadas a labels y checkbox
 # variables especiales llamadas "Variable Classes" que permiten vincular
 # datos directamente con widgets (controles)
@@ -1203,7 +1203,6 @@ status_var = tk.StringVar(value="") # se usa para mostrar mensajes de estado en 
 chk_preview_var = tk.BooleanVar(value=False) # está asociada al Checkbutton "Mostrar previsualización"
 
 chk_preview_var.set(config["mostrar_preview"])
-
 
 # tk.Menu: crea una barra de menú
 # root: se asocia al Tk() principal para que dicho menú aparezca arriba de la ventana
@@ -1226,7 +1225,6 @@ menu_hacer.add_separator()
 menubar.add_cascade(label="Hacer", menu=menu_hacer)
 #menu_hacer.add_command(label="Salir", command=salir)
 menu_hacer.add_cascade(label="Configuración", command=configuracion)
-
 
 menu_ayuda = tk.Menu(menubar, tearoff=0)
 menu_ayuda.add_command(label="Manual PDF", command=abrir_manual)
@@ -1257,23 +1255,23 @@ frame_top.pack(fill="x", pady=5)
 # padx=10: Espacio horizontal (izquierda y derecha). Evita que el label quede pegado al borde
 ttk.Label(frame_top, textvariable=hora_var).pack(side="right", padx=10)
 
-# 2. Create a Notebook (tab control)
-# The main window 'root' is the parent
+# Creamos un control Notebook (Solapa (tab))
+# La ventana principal 'root' es el parent
 notebook = ttk.Notebook(root)
-notebook.pack(expand=1, fill="both") # Makes the notebook expand and fill the window
+notebook.pack(expand=1, fill="both") # notebook se expande y llena la ventana
 
-# 3. Create frames for each tab
+# Creamos un frame paara cada solapa
 app_tab     = ttk.Frame(notebook)
-manual_tab  = VisorPdf(notebook,abrir=False,cerrar=False)
-informe_tab = VisorPdf(notebook,abrir=False,cerrar=False)
+manual_tab  = VisorPdf(notebook,abrir=False,cerrar=False) # creamos una instancia de VisorPdf
+informe_tab = VisorPdf(notebook,abrir=False,cerrar=False) # que va a contener los pdf
 
-# 4. Add the frames as tabs to the notebook
+# agregamos los frames a notebook
 notebook.add(app_tab, text='Aplicación')
 notebook.add(manual_tab, text='Manual')
 notebook.add(informe_tab, text='Informe')
 
+# Abrimos en cada solapa VisofPdf el documento pdf que corresponde
 informe_tab.abrir_pdf(informe)
-
 manual_tab.abrir_pdf(manual)
 
 # Frame principal
@@ -1374,7 +1372,6 @@ import webbrowser # importa el módulo webbrowser, que permite abrir enlaces en 
 def abrir_enlace_manual(event):
      # abre la página web indicada en el navegador predeterminado 
     webbrowser.open(LINK_MANUAL)
-
 
 ttk.Label(root, text=f"Versión: {VERSION}").pack(side="left", padx=15)
 
