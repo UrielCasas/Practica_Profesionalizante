@@ -69,7 +69,7 @@ config              = None    # recibe los datos leides desde arch_conf
 # valores por default de claves en archivo config.json
 config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
 # Datos de información del software
-VERSION             = "1.4.5"
+VERSION             = "1.4.6"
 AUTORES             = "Casas Uriel - Fustet Arnaldo"
 ANIO                = "2025/2026"
 LINK_MANUAL         = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
