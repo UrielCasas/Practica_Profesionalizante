@@ -675,7 +675,7 @@ def check():
         check_is_fitted(model)
     except Exception:
         # el modelo no está entrenado, lo entrenamos antes
-        entrenar()
+        entrenar(False)
 
     return True
 
