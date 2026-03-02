@@ -32,7 +32,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from   sklearn.linear_model import LogisticRegression # quiere decir: del módulo llamadado sklearn.linear_model, importar el objeto llamado: LogisticRegression
 from   sklearn.model_selection import train_test_split
-from   sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from   sklearn.metrics import accuracy_score #, confusion_matrix, classification_report
 from   sklearn.utils.validation import check_is_fitted # para verificar si el model está entrenado
 from   sklearn.metrics import log_loss
 import os
@@ -68,8 +68,9 @@ config_path         = f"{app_dir}/config.json"
 config              = None    # recibe los datos leides desde arch_conf
 # valores por default de claves en archivo config.json
 config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
+
 # Datos de información del software
-VERSION        = "1.4.5"
+VERSION        = "1.4.6"
 AUTORES        = "Casas Uriel - Fustet Arnaldo"
 ANIO           = "2025/2026"
 LINK_MANUAL    = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
@@ -98,7 +99,6 @@ def leer_dir(dir):
 
         df = pd.concat(dfs, ignore_index=True)
         return True
-    
     except Exception as e:
         messagebox.showerror("Error al importar directorio", str(e))
         return False
@@ -168,7 +168,6 @@ def procesar_df():
             pandemia = [ (pd.Timestamp(dt.strptime('2020-03-20', "%Y-%m-%d").date())), 
                         (pd.Timestamp(dt.strptime('2022-03-31', "%Y-%m-%d").date()))]
             return (fecha >= pandemia[0]) and (fecha <= pandemia[1])
-        
 
         def obtener_estacion(fecha):
             """
@@ -389,6 +388,7 @@ def verificar():
     return
 
 def solicitar_datos():
+    global app_dir
     punto = None
     
     # Crea la ventana para solicitar al usuario datos
@@ -401,8 +401,7 @@ def solicitar_datos():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
     img_lbl = tk.Label(v, image=img).place(y=20, x=15)
     
     # Creamos Comboboxes (listas desplegables) para la selección de
@@ -682,6 +681,7 @@ def check():
     return True
 
 def grafico_barras_dias():
+    global df
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
     # calcula cuántos éxitos (1) y fracasos (0) hubo por día
@@ -729,6 +729,7 @@ def grafico_barras_dias():
     plt.show()
 
 def grafico_barras():
+    global df
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
     # calcula cuántos éxitos (1) y fracasos (0) hubo por estación
@@ -772,7 +773,8 @@ def grafico_barras():
     plt.show()
 
 def estadisticas():
-    
+    global df
+
     if df is None:
         messagebox.showinfo("Alerta","No hay cargado ningún dataset")
         return
@@ -841,10 +843,8 @@ def mostrar_datos(titulo, datos):
 
     if isinstance(datos, pd.core.frame.DataFrame):
         text_area.insert(tk.END, datos.to_string()+"\n")
-    elif isinstance(datos, pd.core.frame.DataFrame):
-        text_area.insert(tk.END, datos)
     else:
-        text_area.insert(tk.END, "tipo de datos no contemplado")    
+        text_area.insert(tk.END, datos)
         
     tk.Button(top, text="Cerrar", command=top.destroy).pack(pady=10)
 
@@ -945,7 +945,7 @@ def mostrar_info():
               ).pack(pady=10, side="right", padx=(0,20))    # Posiciona el botón debajo del link a la derecha alejado del borde unos 20 píxeles, y 10 píxeles alejados de debajo y arriba.
 
 def configuracion():
-    global config
+    global config, app_dir
     
     # Crea la ventana para solicitar al usuario datos
     v = tk.Toplevel(root)
@@ -957,8 +957,7 @@ def configuracion():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
     img_lbl = tk.Label(v, image=img).place(y=20, x=15)
 
     def validar_int(S):
@@ -1020,15 +1019,27 @@ def configuracion():
 
     def ok():
 
+        if entry_test_size.get() == ".":
+            entry_test_size.insert(1, '0')
+        
+        if entry_test_size.get() == "":
+            entry_test_size.insert(0, '.0')
+
         if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
             messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
             entry_test_size.focus_set()
             return
+        
+        if entry_random_state.get() == "":
+            entry_random_state.insert(1, '0')
 
         if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
             messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
             entry_random_state.focus_set()
             return
+        
+        if entry_max_iter.get() == "":
+            entry_max_iter.insert(1, '0')
         
         if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
             messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
@@ -1105,6 +1116,7 @@ def crear_archivo_config():
         json.dump(config, archivo_config)
         archivo_config.close()
         return True
+    
     except Exception as e:
         messagebox.showerror(f"{e}")
         return False
