@@ -39,6 +39,7 @@ import os
 from   visorpdf import VisorPdf #clase para mostrar y navegar por un pdf
 import json
 
+
 # ---------------- VARIABLES GLOBALES ----------------
 df = None   # Aquí almacenaremos el DataFrame cargado
 # crea un objeto modelo de regresión logística
@@ -46,9 +47,10 @@ df = None   # Aquí almacenaremos el DataFrame cargado
 # los datos son complejos, puede necesitar más iteraciones para encontrar los coeficientes óptimos
 # Convergencia: nos referimos a cuándo el algoritmo “llega a una solución estable”
 # durante su proceso iterativo.Sucede cuando los ajustes de los parámetros ya no cambian significativamente
-model = LogisticRegression(max_iter=1000) # Modelo de regresión logística
+model = None # Modelo de regresión logística
 # X_train (features) y y_train (variable objetivo): valores para entrenar el modelo
 # X_test y y_test --> probar predicciones del modelo, y comparar predicciones con realidad
+
 X_train = None
 y_train = None
 X_test  = None
@@ -65,9 +67,9 @@ config_path         = f"{app_dir}/config.json"
 # formato del archivo json: {"test_size":float,"max_iter":int,"random_state":int,"mostrar_previsualizacion":bool}
 config              = None    # recibe los datos leides desde arch_conf
 # valores por default de claves en archivo config.json
-config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
+config_default      = {"mostrar_preview" : False, "random_state" : 2100, "max_iter" : 3000, "test_size" : 0.2}
 # Datos de información del software
-VERSION             = "1.4.4"
+VERSION             = "1.4.6"
 AUTORES             = "Casas Uriel - Fustet Arnaldo"
 ANIO                = "2025/2026"
 LINK_MANUAL         = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
@@ -101,22 +103,8 @@ def leer_dir(dir):
         return False
 
 def procesar_df():
+    global df
     try:
-        global df, X, y
-        dir = os.path.dirname(__file__)
-        contenido = os.scandir(f"{dir}/sube-por-dia-por-linea/")
-
-        dfs = list()
-        for e in contenido:
-            _, extension = os.path.splitext(e.name)
-
-            if extension.lower() != ".csv":
-                continue
-        
-            data = pd.read_csv(f"{dir}/sube-por-dia-por-linea/{e.name}")
-            dfs.append(data)
-
-        df = pd.concat(dfs, ignore_index=True)
         print(len(df))
         print(df.head())
 
@@ -147,7 +135,7 @@ def procesar_df():
         def es_feriado(fecha):
             # import pandas as pd
             # arreglo frds guada los días feriados de los 2020 al 2025
-            feriados =  [    '2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
+            feriados =  ['2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
                         ,'2020-05-01','2020-05-25','2020-06-15','2020-06-20','2020-07-09','2020-07-10'
                         ,'2020-08-17','2020-10-12','2020-11-23','2020-12-07','2020-12-08','2020-12-25'
 
@@ -265,7 +253,6 @@ def procesar_df():
 
         if chk_preview_var.get():
             mostrar_preview()
-
         
         return True
     
@@ -358,6 +345,7 @@ def entrenar(msj=True):
     # y_test: los resultados reales de esas filas de prueba
     # el modelo usa X_test para predecir y luego comparamos con y_test para ver qué tan bien lo hizo
     model.fit(X_train, y_train)
+
     if msj:
         messagebox.showinfo("Mensaje", f"Modelo Entrenado!")
     return
@@ -388,6 +376,7 @@ def verificar():
     # Calculamos probacilidades de las predicciones para el conjunto de test
     # log_loss requiere probabilidades no las predicciones finales
     y_pred_proba = model.predict_proba(X_test)
+    
     # Calculamos el log loss
     # La funcion toma los valores de test de "y" y las probabilidades de predicciones
     loss = log_loss(y_test, y_pred_proba)
@@ -398,7 +387,10 @@ def verificar():
     print(f"Log Loss: {loss:.4f}")
     print(f"Exactitud del modelo: {acc:.2f}")
 
+    return
+
 def solicitar_datos():
+    global app_dir
     punto = None
     
     # Crea la ventana para solicitar al usuario datos
@@ -472,7 +464,7 @@ def solicitar_datos():
        
         punto = pd.DataFrame({
                     "Estacion":  [estaciones_combo.get()],
-                    "Tipo":  [tipos_combo.get()],
+                    "Tipo":      [tipos_combo.get()],
                     "DiaSemana": [dias_combo.current()],
                     "Clases":    [chk_clases_var.get()], #[ ("1" if chk_clases_var.get() else "0") ],
                     "Feriado":   [chk_feriado_var.get()], #[ ("1" if chk_feriado_var.get() else "0") ],
@@ -591,7 +583,7 @@ def graficar(nuevo_punto):
     # Para graficar solo en función del día de la semana, necesitamos mantener constantes las otras variables: Feriado, Clases, Estación y Pandemia
     # cualquier cambio o variación en la probabilidad se debe solo al día de la semana
     clases_constante   = "0"
-    tipo_constante   = "LANCHA"
+    tipo_constante     = "LANCHA"
     estacion_constante = "Otoño"
     pandemia_constante = "0"
     feriado_constante  = "0"
@@ -884,6 +876,9 @@ def actualizar_hora():
 
 def escribir(texto):
     """muestra texto en el panel derecho."""
+    if texto.strip() == '':
+        text_output.delete('1.0', tk.END)
+        return
     text_output.insert("end", texto + "\n")
     #text_output.see("end")  # auto-scroll hacia el final
 
@@ -1042,15 +1037,27 @@ def configuracion():
 
     def ok():
 
+        if entry_test_size.get() == ".":
+            entry_test_size.insert(1, '0')
+        
+        if entry_test_size.get() == "":
+            entry_test_size.insert(0, '.0')
+
         if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
             messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
             entry_test_size.focus_set()
             return
+        
+        if entry_random_state.get() == "":
+            entry_random_state.insert(1, '0')
 
         if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
             messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
             entry_random_state.focus_set()
             return
+        
+        if entry_max_iter.get() == "":
+            entry_max_iter.insert(1, '0')
         
         if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
             messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
@@ -1213,7 +1220,7 @@ model = LogisticRegression(max_iter=config["max_iter"]) # Modelo de regresión l
 # llama al constructor de Tkinter que crea la ventana base
 # sobre esta ventanase se va a colocar todos los demás widgets y controles
 root = tk.Tk()
-root.title("Ejemplo de Intefaz Gráfica") # fia un título principal
+root.title("Regresión Logística") # fia un título principal
 root.geometry("900x600") # establece el tamaño inicial de la ventana en píxeles. 900 píxeles de ancho y 600 píxeles de alto
 
 # variables asociadas a labels y checkbox
@@ -1320,7 +1327,7 @@ frame_controls.pack(side="left", fill="y", padx=10, pady=10)
 # importar_txt es el nombre de una función
 # .pack(): es el método que posiciona el botón dentro del frame
 #ttk.Button(frame_controls, text="Importar TXT", command=importar_txt).pack(fill="x", pady=5)
-ttk.Button(frame_controls, text="Importar directorio", command=importar_datos).pack(fill="x", pady=5)
+ttk.Button(frame_controls, text="Importar CSV", command=importar_datos).pack(fill="x", pady=5)
 ttk.Button(frame_controls, text="Calcular estadísticas", command=estadisticas).pack(fill="x", pady=5)
 #ttk.Button(frame_controls, text="Salir", command=salir).pack(fill="x", pady=5)
 
@@ -1391,9 +1398,9 @@ ttk.Label(root, textvariable=status_var, relief="sunken", anchor="w").pack(fill=
 # ---------- ENLACES INFERIORES ----------
 import webbrowser # importa el módulo webbrowser, que permite abrir enlaces en por medio de un navegador
 
-def abrir_descarga(event):
+def abrir_enlace_manual(event):
      # abre la página web indicada en el navegador predeterminado 
-    webbrowser.open("https://github.com/UrielCasas/TPF_ACL.git")
+    webbrowser.open(LINK_MANUAL)
 
 ttk.Label(root, text=f"Versión: {VERSION}").pack(side="left", padx=15)
 
@@ -1408,8 +1415,8 @@ link_descarga = tk.Label(root, text="¡Acceder al Manual desde aquí!", fg="blue
 link_descarga.pack(pady=5)
 # bind() asocia un evento a una función
 # "<Button-1>": significa "clic izquierdo del mouse"
-# abrir_descarga: función que se ejecutará al hacer clic, y que abrirá la página web
-link_descarga.bind("<Button-1>", abrir_descarga)
+# abrir_enlace_manual: función que se ejecutará al hacer clic, y que abrirá la página web
+link_descarga.bind("<Button-1>", abrir_enlace_manual)
 
 # iniciar actualización de hora
 actualizar_hora()
