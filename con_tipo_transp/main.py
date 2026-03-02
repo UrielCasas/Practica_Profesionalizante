@@ -32,7 +32,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from   sklearn.linear_model import LogisticRegression # quiere decir: del módulo llamadado sklearn.linear_model, importar el objeto llamado: LogisticRegression
 from   sklearn.model_selection import train_test_split
-from   sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from   sklearn.metrics import accuracy_score #, confusion_matrix, classification_report
 from   sklearn.utils.validation import check_is_fitted # para verificar si el model está entrenado
 from   sklearn.metrics import log_loss
 import os
@@ -66,43 +66,17 @@ config_path         = f"{app_dir}/config.json"
 # los datos de estas variables se leen desde archivo json al que con la trayectoria arch_conf
 # formato del archivo json: {"test_size":float,"max_iter":int,"random_state":int,"mostrar_previsualizacion":bool}
 config              = None    # recibe los datos leides desde arch_conf
-
 # valores por default de claves en archivo config.json
 config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 500, "test_size" : 0.3}
 
 # Datos de información del software
-VERSION        = "1.4.4"
+VERSION        = "1.4.6"
 AUTORES        = "Casas Uriel - Fustet Arnaldo"
 ANIO           = "2025/2026"
 LINK_MANUAL    = "https://github.com/UrielCasas/Practica_Profesionalizante/blob/main/docs/manualdeusuario.pdf"
 LINK_DESCARGAS = "https://github.com/UrielCasas/Practica_Profesionalizante"
 
 # ---------------- FUNCIONES ----------------
-def importar_csv():
-    """
-    Docstring for importar_csv
-    Importa un archivo CSV con encabezados.
-    """
-    global df, X, y
-   
-    archivo = filedialog.askopenfilename(
-        title="Seleccionar archivo CSV",
-        filetypes=[("Archivos CSV", "*.csv"), ("Todos los archivos", "*.*")]
-    )
-
-    if (not archivo):
-        escribir("Importación CSV cancelada.")
-        return
-
-    escribir("Importando CSV: " + archivo)
-
-    try:
-        #df = pd.read_csv(archivo, header=0)
-        df  = pd.read_csv(archivo, sep=';', header=0)
-    except Exception as e:
-        messagebox.showerror("Error al importar CSV", str(e))
-        return
-
 def leer_dir(dir):
     """
     Docstring for leer_dir
@@ -144,6 +118,10 @@ def procesar_df():
         print(len(df))
         print(df.head())
 
+        df = df[df['CANT_TRJ'] > 0]
+        print(len(df))
+        print(df.head())
+
         df.rename(columns={'TIPO_TRANSPORTE': 'Tipo', 'CANT_TRJ': 'Cantidad'}, inplace=True)
 
         # 2. Asegurar que la columna sea tipo datetime
@@ -158,7 +136,7 @@ def procesar_df():
         def es_feriado(fecha):
             # import pandas as pd
             # arreglo frds guada los días feriados de los 2020 al 2025
-            feriados =  [    '2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
+            feriados =  ['2020-01-01','2020-02-24','2020-02-25','2020-03-23','2020-03-24','2020-04-02','2020-04-10'
                         ,'2020-05-01','2020-05-25','2020-06-15','2020-06-20','2020-07-09','2020-07-10'
                         ,'2020-08-17','2020-10-12','2020-11-23','2020-12-07','2020-12-08','2020-12-25'
 
@@ -275,6 +253,7 @@ def procesar_df():
 
         if chk_preview_var.get():
             mostrar_preview()
+
         print(df.isna().sum())
 
         return True
@@ -315,7 +294,6 @@ def preparar_modelo():
         # cuando entrenamos el modelo con model.fit(X, y), el modelo aprende cómo cada variable afecta la probabilidad de éxito.
         y = data_encoded["Exito"]
         return True
-
     except Exception as e:
         messagebox.showerror("Error procesando datos", str(e))
         return False
@@ -414,6 +392,7 @@ def verificar():
     return
 
 def solicitar_datos():
+    global app_dir
     punto = None
     
     # Crea la ventana para solicitar al usuario datos
@@ -426,8 +405,7 @@ def solicitar_datos():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
     img_lbl = tk.Label(v, image=img).place(y=20, x=15)
     
     # Creamos Comboboxes (listas desplegables) para la selección de
@@ -488,7 +466,7 @@ def solicitar_datos():
        
         punto = pd.DataFrame({
                     "Estacion":  [estaciones_combo.get()],
-                    "Tipo":  [tipos_combo.get()],
+                    "Tipo":      [tipos_combo.get()],
                     "DiaSemana": [dias_combo.current()],
                     "Clases":    [chk_clases_var.get()], #[ ("1" if chk_clases_var.get() else "0") ],
                     "Feriado":   [chk_feriado_var.get()], #[ ("1" if chk_feriado_var.get() else "0") ],
@@ -616,11 +594,11 @@ def graficar(nuevo_punto):
     # se usará para pasar al modelo y obtener la probabilidad de éxito para cada valor de día de la semana.
     df_pred = pd.DataFrame({
         "DiaSemana": dias_values,
-        "Tipo": [tipo_constante]*100,
-        "Feriado": [clases_constante]*100,
-        "Clases": [feriado_constante]*100,
-        "Estacion": [estacion_constante]*100,
-        "Pandemia": [pandemia_constante]*100
+        "Tipo":      [tipo_constante]*100,
+        "Feriado":   [clases_constante]*100,
+        "Clases":    [feriado_constante]*100,
+        "Estacion":  [estacion_constante]*100,
+        "Pandemia":  [pandemia_constante]*100
     })
 
     # le pasamos como argumento 'df_pred' --> Dataframe en donde solo varía el valor de día de la semana
@@ -720,6 +698,7 @@ def check():
     return True
 
 def grafico_barras_dias():
+    global df
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
     # calcula cuántos éxitos (1) y fracasos (0) hubo por día
@@ -767,6 +746,7 @@ def grafico_barras_dias():
     plt.show()
 
 def grafico_barras():
+    global df
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
     # calcula cuántos éxitos (1) y fracasos (0) hubo por estación
@@ -810,7 +790,8 @@ def grafico_barras():
     plt.show()
 
 def estadisticas():
-    
+    global df
+
     if df is None:
         messagebox.showinfo("Alerta","No hay cargado ningún dataset")
         return
@@ -879,10 +860,8 @@ def mostrar_datos(titulo, datos):
 
     if isinstance(datos, pd.core.frame.DataFrame):
         text_area.insert(tk.END, datos.to_string()+"\n")
-    elif isinstance(datos, pd.core.frame.DataFrame):
-        text_area.insert(tk.END, datos)
     else:
-        text_area.insert(tk.END, "tipo de datos no contemplado")    
+        text_area.insert(tk.END, datos)
         
     tk.Button(top, text="Cerrar", command=top.destroy).pack(pady=10)
 
@@ -983,7 +962,7 @@ def mostrar_info():
               ).pack(pady=10, side="right", padx=(0,20))    # Posiciona el botón debajo del link a la derecha alejado del borde unos 20 píxeles, y 10 píxeles alejados de debajo y arriba.
 
 def configuracion():
-    global config
+    global config, app_dir
     
     # Crea la ventana para solicitar al usuario datos
     v = tk.Toplevel(root)
@@ -995,8 +974,7 @@ def configuracion():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
     img_lbl = tk.Label(v, image=img).place(y=20, x=15)
 
     def validar_int(S):
@@ -1057,6 +1035,34 @@ def configuracion():
     ttk.Checkbutton(v, text="Mostra Previsualización", variable=chk_mostrar_preview_var).place(y=110, x=115)
 
     def ok():
+        
+        if entry_test_size.get() == ".":
+            entry_test_size.insert(1, '0')
+        
+        if entry_test_size.get() == "":
+            entry_test_size.insert(0, '.0')
+
+        if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
+            messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
+            entry_test_size.focus_set()
+            return
+        
+        if entry_random_state.get() == "":
+            entry_random_state.insert(1, '0')
+
+        if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
+            messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
+            entry_random_state.focus_set()
+            return
+        
+        if entry_max_iter.get() == "":
+            entry_max_iter.insert(1, '0')
+        
+        if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
+            messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
+            entry_max_iter.focus_set()
+            return
+
         guardar = False
         global config, model  
 
@@ -1212,7 +1218,7 @@ model = LogisticRegression(max_iter=config["max_iter"]) # Modelo de regresión l
 # llama al constructor de Tkinter que crea la ventana base
 # sobre esta ventanase se va a colocar todos los demás widgets y controles
 root = tk.Tk()
-root.title("Ejemplo de Intefaz Gráfica") # fia un título principal
+root.title("Regresión Logística") # fia un título principal
 root.geometry("900x600") # establece el tamaño inicial de la ventana en píxeles. 900 píxeles de ancho y 600 píxeles de alto
 
 
@@ -1240,7 +1246,7 @@ menu_hacer = tk.Menu(menubar, tearoff=0)
 # Las acciones, procesos siempre invocan funciones de Python
 # pero sin ningún parámetro
 #menu_hacer.add_command(label="Importar TXT", command=importar_txt)
-menu_hacer.add_command(label="Importar CSV", command=importar_csv)
+menu_hacer.add_command(label="Importar CSV", command=importar_datos)
 # agrega una línea divisoria visual para separar grupos de opciones dentro del menú
 menu_hacer.add_separator()
 menubar.add_cascade(label="Hacer", menu=menu_hacer)
@@ -1292,8 +1298,8 @@ notebook.add(app_tab, text='Aplicación')
 notebook.add(manual_tab, text='Manual')
 notebook.add(informe_tab, text='Informe')
 
+# Abrimos en cada solapa VisofPdf el documento pdf que corresponde
 informe_tab.abrir_pdf(informe)
-
 manual_tab.abrir_pdf(manual)
 
 # Frame principal
