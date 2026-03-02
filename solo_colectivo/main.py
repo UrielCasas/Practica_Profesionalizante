@@ -32,11 +32,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from   sklearn.linear_model import LogisticRegression # quiere decir: del módulo llamadado sklearn.linear_model, importar el objeto llamado: LogisticRegression
 from   sklearn.model_selection import train_test_split
-from   sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from   sklearn.metrics import accuracy_score #, confusion_matrix, classification_report
 from   sklearn.utils.validation import check_is_fitted # para verificar si el model está entrenado
-from sklearn.metrics import log_loss
+from   sklearn.metrics import log_loss
 import os
-from visorpdf import VisorPdf # clase para mostrar y navegar por un pdf
+from   visorpdf import VisorPdf # clase para mostrar y navegar por un pdf
 import json
 
 
@@ -68,6 +68,7 @@ config_path         = f"{app_dir}/config.json"
 config              = None    # recibe los datos leides desde arch_conf
 # valores por default de claves en archivo config.json
 config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
+
 # Datos de información del software
 VERSION             = "1.4.6"
 AUTORES             = "Casas Uriel - Fustet Arnaldo"
@@ -111,6 +112,7 @@ def procesar_df():
         df = df[df['TIPO_TRANSPORTE'] != 'TOTAL']
         print(len(df))
         print(df.head())
+        
         df = df[df['TIPO_TRANSPORTE'] == 'COLECTIVO']
         print(len(df))
         print(df.head())
@@ -290,6 +292,7 @@ def preparar_modelo():
         # cuando entrenamos el modelo con model.fit(X, y), el modelo aprende cómo cada variable afecta la probabilidad de éxito.
         y = data_encoded["Exito"]
         return True
+    
     except Exception as e:
         messagebox.showerror("Error procesando datos", str(e))
         return False
@@ -374,6 +377,7 @@ def verificar():
     # Calculamos probacilidades de las predicciones para el conjunto de test
     # log_loss requiere probabilidades no las predicciones finales
     y_pred_proba = model.predict_proba(X_test)
+
     # Calculamos el log loss
     # La funcion toma los valores de test de "y" y las probabilidades de predicciones
     loss = log_loss(y_test, y_pred_proba)
@@ -577,10 +581,10 @@ def graficar(nuevo_punto):
     # se usará para pasar al modelo y obtener la probabilidad de éxito para cada valor de día de la semana.
     df_pred = pd.DataFrame({
         "DiaSemana": dias_values,
-        "Feriado": [clases_constante]*100,
-        "Clases": [feriado_constante]*100,
-        "Estacion": [estacion_constante]*100,
-        "Pandemia": [pandemia_constante]*100
+        "Feriado":   [clases_constante]*100,
+        "Clases":    [feriado_constante]*100,
+        "Estacion":  [estacion_constante]*100,
+        "Pandemia":  [pandemia_constante]*100
     })
 
     # le pasamos como argumento 'df_pred' --> Dataframe en donde solo varía el valor de día de la semana
@@ -728,6 +732,7 @@ def grafico_barras_dias():
     plt.show()
 
 def grafico_barras():
+    global df
     # gráfico de barras: porcentaje de éxito por estación
     # -----------------------------------------------------
     # calcula cuántos éxitos (1) y fracasos (0) hubo por estación
@@ -771,7 +776,8 @@ def grafico_barras():
     plt.show()
 
 def estadisticas():
-    
+    global df
+
     if df is None:
         messagebox.showinfo("Alerta","No hay cargado ningún dataset")
         return
@@ -840,10 +846,8 @@ def mostrar_datos(titulo, datos):
 
     if isinstance(datos, pd.core.frame.DataFrame):
         text_area.insert(tk.END, datos.to_string()+"\n")
-    elif isinstance(datos, pd.core.frame.DataFrame):
-        text_area.insert(tk.END, datos)
     else:
-        text_area.insert(tk.END, "tipo de datos no contemplado")    
+        text_area.insert(tk.END, datos)     
         
     tk.Button(top, text="Cerrar", command=top.destroy).pack(pady=10)
 
@@ -944,7 +948,7 @@ def mostrar_info():
               ).pack(pady=10, side="right", padx=(0,20))    # Posiciona el botón debajo del link a la derecha alejado del borde unos 20 píxeles, y 10 píxeles alejados de debajo y arriba.
 
 def configuracion():
-    global config
+    global config, app_dir
     
     # Crea la ventana para solicitar al usuario datos
     v = tk.Toplevel(root)
@@ -956,8 +960,7 @@ def configuracion():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
+    img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
     img_lbl = tk.Label(v, image=img).place(y=20, x=15)
 
     def validar_int(S):
@@ -1019,15 +1022,27 @@ def configuracion():
 
     def ok():
 
+        if entry_test_size.get() == ".":
+            entry_test_size.insert(1, '0')
+        
+        if entry_test_size.get() == "":
+            entry_test_size.insert(0, '.0')
+
         if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
             messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
             entry_test_size.focus_set()
             return
+        
+        if entry_random_state.get() == "":
+            entry_random_state.insert(1, '0')
 
         if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
             messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
             entry_random_state.focus_set()
             return
+        
+        if entry_max_iter.get() == "":
+            entry_max_iter.insert(1, '0')
         
         if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
             messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
@@ -1104,6 +1119,7 @@ def crear_archivo_config():
         json.dump(config, archivo_config)
         archivo_config.close()
         return True
+    
     except Exception as e:
         messagebox.showerror(f"{e}")
         return False
@@ -1386,7 +1402,7 @@ link_descarga = tk.Label(root, text="¡Acceder al Manual desde aquí!", fg="blue
 link_descarga.pack(pady=5)
 # bind() asocia un evento a una función
 # "<Button-1>": significa "clic izquierdo del mouse"
-# abrir_descarga: función que se ejecutará al hacer clic, y que abrirá la página web
+# abrir_enlace_manual: función que se ejecutará al hacer clic, y que abrirá la página web
 link_descarga.bind("<Button-1>", abrir_enlace_manual)
 
 # iniciar actualización de hora
