@@ -381,7 +381,7 @@ def solicitar_datos():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
     
-    if os.path.isfile(f"{app_dir}/info.png")
+    if os.path.isfile(f"{app_dir}/info.png"):
         img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
         tk.Label(v, image=img).place(y=20, x=15)
     
