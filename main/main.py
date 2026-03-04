@@ -7,7 +7,7 @@
 #              Crear interface gráfica con tkinter 
 #              Graficar con matplotlib
 #              Datos origen bajados desde:
-#              <agregar link>
+#              https://datos.transporte.gob.ar/dataset/sube-cantidad-de-tarjetas-usuarios-por-fecha
 #              Se contempla sólo el tipo de transporte "COLECTIVO"
 #              se podaron los datos de "TREN", "SUBTE" y "LANCHA"
 #              
@@ -70,7 +70,7 @@ config_path         = f"{app_dir}/config.json"
 config              = None    # recibe los datos leides desde arch_conf
 # valores por default de claves en archivo config.json
 config_default      = {"mostrar_preview" : True, "random_state" : 2100, "max_iter" : 800, "test_size" : 0.1}
-config_db           = f"{app_dir}/config.db"
+config_db_path      = f"{app_dir}/config.db"
 feriados            = []
 frds                = []
 
@@ -1133,9 +1133,9 @@ def es_float(S):
 # ---------------- FUNCIÓN PARA LEER ARCHIVO CONFIG ----------------
 
 def leer_feriados():
-    global feriados, frds
+    global feriados, frds, config_db_path
     try:
-        cnx = sqlite3.connect(f'{app_dir}/config.db')
+        cnx = sqlite3.connect(config_db_path)
         cursor = cnx.cursor()
         cursor.execute("SELECT Fecha FROM Feriados")        
         filas = cursor.fetchall()
@@ -1304,7 +1304,7 @@ model = LogisticRegression(max_iter=config["max_iter"]) # Modelo de regresión l
 # llama al constructor de Tkinter que crea la ventana base
 # sobre esta ventanase se va a colocar todos los demás widgets y controles
 root = tk.Tk()
-root.title("Ejemplo de Regresión Logística") # fia un título principal
+root.title("Regresión Logística") # fia un título principal
 root.geometry("900x600") # establece el tamaño inicial de la ventana en píxeles. 900 píxeles de ancho y 600 píxeles de alto
 
 
