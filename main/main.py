@@ -107,7 +107,7 @@ def leer_dir(dir):
         df = pd.concat(dfs, ignore_index=True)
         return True
     except Exception as e:
-        messagebox.showerror("Error al importar directorio", str(e))
+        messagebox.showerror("Alerta", f"Error al importar directorio: {str(e)}")
         return False
 
 def procesar_df():
@@ -236,7 +236,7 @@ def procesar_df():
         return True
     
     except Exception as e:
-        messagebox.showerror("Error procesando datos", str(e))
+        messagebox.showerror("Alerta", f"Error procesando datos: {str(e)}")
         return False
 
 def preparar_modelo():
@@ -272,7 +272,7 @@ def preparar_modelo():
         y = data_encoded["Exito"]
         return True
     except Exception as e:
-        messagebox.showerror("Error procesando datos", str(e))
+        messagebox.showerror("Alerta", f"Error procesando datos: {str(e)}")
         return False
 
 def importar_datos():
@@ -296,11 +296,11 @@ def entrenar(msj=True):
     global X, y, model, X_train, y_train, X_test, y_test, df, config
 
     if model is None:
-        messagebox.showerror("Alerta","Error interno, no hay definido un ningún model")
+        messagebox.showerror("Alerta", "Error interno, no hay definido un ningún model")
         return
     
     if df is None:
-        messagebox.showerror("Alerta","No hay cargado ningún dataset")
+        messagebox.showerror("Alerta", "No hay cargado ningún dataset")
         return
 
     # entrenamiento del modelo
@@ -329,6 +329,10 @@ def entrenar(msj=True):
 
 def verificar():
     global model, X_test, y_test
+
+    if df is None:
+        messagebox.showerror("Alerta", "No hay ningún dataset cargado")
+        return
     
     if model is None:
         return
@@ -369,6 +373,15 @@ def verificar():
 
 def solicitar_datos():
     global app_dir
+
+    if model is None:
+        messagebox.showerror("Alerta", "Error interno, no hay definido un ningún model")
+        return
+    
+    if df is None:
+        messagebox.showerror("Alerta", "No hay cargado ningún dataset")
+        return
+
     punto = None
     
     # Crea la ventana para solicitar al usuario datos
@@ -416,19 +429,21 @@ def solicitar_datos():
     def ok():
         nonlocal punto
         if dias_combo.get() not in dias:
-            messagebox.showinfo("Alerta","Por favor seleccione un día de la semana")
+            messagebox.showerror("Alerta", "Por favor seleccione un día de la semana")
+            dias_combo.focus_set()
             return
         
         if estaciones_combo.get() not in estaciones:
-            messagebox.showinfo("Alerta","Por favor seleccione una estación del año")
+            messagebox.showerror("Alerta", "Por favor seleccione una estación del año")
+            estaciones_combo.focus_set()
             return
 
         if model is None:
-            messagebox.showinfo("Alerta","Error interno, no hay definido un ningún model")
+            messagebox.showerror("Alerta", "Error interno, no hay definido un ningún model")
             return
         
         if df is None:
-            messagebox.showinfo("Alerta","No hay cargado ningún dataset")
+            messagebox.showerror("Alerta", "No hay cargado ningún dataset")
             return       
        
         punto = pd.DataFrame({
@@ -646,18 +661,18 @@ def graficar(nuevo_punto):
 
 def check():
     if model is None:
-        messagebox.showinfo("Alerta","Error interno, no hay definido ningún modelo")
+        messagebox.showerror("Alerta", "Error interno, no hay definido ningún modelo")
         return False
     
     if df is None:
-        messagebox.showinfo("Alerta","No hay cargado ningún dataset")
+        messagebox.showerror("Alerta", "No hay cargado ningún dataset")
         return False
     
     try:
         check_is_fitted(model)
     except Exception:
         # el modelo no está entrenado, lo entrenamos antes
-        entrenar()
+        entrenar(False)
 
     return True
 
@@ -755,7 +770,7 @@ def grafico_barras():
 def estadisticas():
     
     if df is None:
-        messagebox.showinfo("Alerta","No hay cargado ningún dataset")
+        messagebox.showerror("Alerta","No hay cargado ningún dataset")
         return
     
     columna = df["Cantidad"]
@@ -1007,7 +1022,7 @@ def configuracion():
             entry_test_size.insert(0, '.0')
 
         if float(entry_test_size.get()) < 0.1 or float(entry_test_size.get()) > 0.9:
-            messagebox.showerror("Error de Datos", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
+            messagebox.showerror("Alerta", "Rango de test_size incorrecto. (Debe estar entre 0.1 - 0.9)")
             entry_test_size.focus_set()
             return
         
@@ -1015,7 +1030,7 @@ def configuracion():
             entry_random_state.insert(1, '0')
 
         if int(entry_random_state.get()) < 0 or int(entry_random_state.get()) > 3000:
-            messagebox.showerror("Error de Datos", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
+            messagebox.showerror("Alerta", "Rango de random_state incorrecto. (Debe estar entre 0 - 3000)")
             entry_random_state.focus_set()
             return
         
@@ -1023,7 +1038,7 @@ def configuracion():
             entry_max_iter.insert(1, '0')
         
         if int(entry_max_iter.get()) < 10 or int(entry_max_iter.get()) > 3000:
-            messagebox.showerror("Error de Datos", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
+            messagebox.showerror("Alerta", "Rango de max_iter incorrecto. (Debe estar entre 10 - 3000)")
             entry_max_iter.focus_set()
             return
 
@@ -1099,7 +1114,7 @@ def crear_archivo_config():
         return True
     
     except Exception as e:
-        messagebox.showerror(f"{e}")
+        messagebox.showerror("Alerta", f"Error creando archivo de configuración: {e}")
         return False
 
 def es_int(S):
