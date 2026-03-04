@@ -2,8 +2,24 @@
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
 
+## [Unreleased]
+
+### Added
+- Agregar en manual nuevas funcionalidades.
+- pasar demás parámetros configurables de config.json a config.db.
+
+### Fixed
+- Verificar existencia e integridad de config.db.
+
+
 ## [1.5.0] - 2026-03-04
 
+### Added
+- La fecha de los feriados se guarda en una base sqlite (config.db).
+- Función y entrada en menú para administrar los feriados.
+
+### Fixed
+- Control si existe archivo info.png en función configuracion().
 
 ## [1.4.6] - 2026-03-01
 
@@ -119,6 +135,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
