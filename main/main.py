@@ -938,9 +938,9 @@ def configuracion():
     
     #tk.Button(v, text="Info", command=lambda:messagebox.showinfo("tamaño ventana",f"ancho: {v.winfo_width()} - alto: {v.winfo_height()}"), width=5).pack(pady=10)
 
-    dir = os.path.dirname(__file__)
-    img = PhotoImage(file=f"{dir}/info.png").subsample(5,5)
-    img_lbl = tk.Label(v, image=img).place(y=20, x=15)
+    if os.path.isfile(f"{app_dir}/info.png"):
+        img = PhotoImage(file=f"{app_dir}/info.png").subsample(5,5)
+        tk.Label(v, image=img).place(y=20, x=15)
 
     def validar_int(S):
         """
