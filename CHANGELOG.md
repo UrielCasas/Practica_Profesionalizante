@@ -1,6 +1,9 @@
-# Changelog de [/solo_colectivo/main.py]
+# Changelog de [/main/main.py]
 
 Todas las novedades notables de este proyecto se documentarán en este archivo.
+
+## [1.5.0] - 2026-03-04
+
 
 ## [1.4.6] - 2026-03-01
 
@@ -107,6 +110,7 @@ Todas las novedades notables de este proyecto se documentarán en este archivo.
 
 _First release._
 
+[1.4.6]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.6
 [1.4.5]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.5
 [1.4.4]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.4
 [1.4.3]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.4.3
@@ -115,6 +119,7 @@ _First release._
 [1.3.1]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.1
 [1.3.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.3.0
 [1.2.0]: https://github.com/UrielCasas/Practica_Profesionalizante/tree/main/_vers/solo_colectivo/v1.2.0
+
 
 
 
